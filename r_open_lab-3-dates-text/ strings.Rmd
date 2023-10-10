@@ -1,0 +1,388 @@
+---
+title: 'R Open Lab 3: Strings'
+author: "Joddy"
+date: "2023-10-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Strings
+
+Today we will learn what strings are, how they work, and how to manipulate them using the stringr package from tidyverse. Along the way, we will also learn about regular expressions, which are specially formatted code to find and replace sections of character data.
+
+```{r}
+# Load the libraries we'll need today
+library(stringr)
+library(tidyverse)
+
+```
+
+### String definition
+
+A string in R (and many other programming language) is anything that is stored as chr, or character data. To create one, write some text between double quotes, and assign it to a variable.
+
+If you need to include double quote characters within a string, you can use single quotes.
+
+If you'd rather enclose strings in double quotes all the time, you can use escapes instead. For special characters, you can "escape" them using a backslash ("\"). This works for everything, including the double quotes!
+
+Some examples of common special characters:
+  \n - newline
+  \t - tab
+  \ - backslash
+
+```{r}
+string1 <- "This is a string"
+string2 <- 'If I want to include a "quote" inside a string, I use single quotes'
+string3 <- "If I want to include a \"quote\" inside a string with enclosing double quotes, I can escape it with a backslash."
+```
+
+### Working with strings in R
+
+R has builtin functions for working with strings, but the tidyverse ones in stringr are more consistent and easier to use. So we will stick with them today. They all start with "str_", so try typing "str_" into your console to open the RStudio autocomplete. We will work through the string functions one at a time for this lesson.
+
+```{r}
+str_length(c("a", "R Open Lab 3: Working with dates and text", NA))
+```
+
+### Combining strings
+
+```{r}
+str_c("x", "y")
+str_c("x", "y", "z")
+
+# By default, the combined strings are not separated. Use sep= to control how they're separated:
+str_c("x", "y", sep=",")
+```
+
+To collapse a vector of strings into a single string, use the collapse argument:
+
+```{r}
+str_c(c("x", "y", "z"), collapse = ", ")
+```
+
+### Subsetting strings
+
+You can take a "subset" of a string using str_sub(). This will extract the portion of the string that you specify with the indices.
+
+```{r}
+x <- c("Apple", "Banana", "Pear")
+# The index starts at 1 for the first character (may seem obvious, but is not true for other languages!)
+str_sub(x, 1, 3)
+
+# This takes 3 characters from the string, starting at the first character.
+
+# negative numbers count backwards from end
+str_sub(x, -3, -1)
+
+# This takes the last 3 characters from a string
+```
+
+### Changing string case
+
+One common task is to change all characters to lower case:
+```{r}
+str_to_lower(x)
+```
+
+Similarly, you can change all characters to upper case:
+```{r}
+str_to_upper(x)
+```
+
+Note that different written languages have different rules for case, so if you're not using English, you will need to add the locale= argument to set which set of case rules to use. See the docs for str_to_lower and stringi::stri_locale_list() for more.
+
+### Regular expressions
+
+Regular expressions (abbreviated regex or regexp) are a syntax that allow you to describe patterns in strings. The learning curve is steep for regular expressions, but they are very powerful and useful! So it's worth taking the time to learn them if you're going to be coding for strings. There are many subtleties of regular expressions, so we will focus on only the most common ones that you'll need.
+
+To learn regular expressions, we will use str_view(), which shows us how a regular expression matches a given string. For example:
+```{r}
+x <- c("apple", "banana", "pear")
+str_view(x, "an")
+```
+
+The "an" regular expression matches on any "an" character values in the strings in our vector. This is the simplest type of regular expression -- you can match exact substrings by using letters and numbers.
+
+The next step is to understand ".", which matches any character (except a newline):
+```{r}
+str_view(x, ".a.")
+```
+
+So we match any substring consisting of an a, and two characters on either side.
+
+What if we need to match "."? You might think that we would need one escape (\), but it turns out that escapes are used in regular expressions as well. So we have to use a double escape:
+```{r}
+# To create the regular expression, we need \\
+dot <- "\\."
+
+# But the expression itself only contains one:
+writeLines(dot)
+
+# And this tells R to look for an explicit .
+str_view(c("abc", "a.c", "bef"), "a\\.c")
+```
+
+### Anchors
+
+Anchors force the regular expression to start at the beginning or end of the string. Without them, regular expressions match any part of a string by default.
+
+We use:
+  ^ to match the start of a string
+  $ to match the end of a string
+
+For example:
+```{r}
+x <- c("apple", "banana", "pear")
+str_view(x, "a")
+
+# The ^ goes before the first character, and $ goes after the last one
+str_view(x, "^a")
+str_view(x, "a$")
+
+# To force matching only on a whole string, use both ^ and $ in the regular expression.
+y <- c("apple pie", "apple", "apple cake")
+str_view(y, "apple")
+str_view(y, "^apple$")
+```
+### Character classes
+
+There are special patterns that match more than one character. You've seen ., which matches any character except for a newline. Here are four more useful ones:
+
+  \d: matches any digit (i.e. 0-9)
+  \s: matches any whitespace (space, tab, newline)
+  [abc]: matches a, b, or c
+  [^abc]: matches anything except for a, b, or c
+  
+Just like with ., you'll need to use \ to escape these patterns in your regex (regular expression) string if you want to use "\s" or "\d" in the regex.
+
+```{r}
+x <- c("abcdefg", "aaa  ", "xyz123")
+
+str_view(x, "\\d")
+str_view(x, "\\s")
+str_view(x, "[abc]")
+str_view(x, "[^abc]")
+
+```
+
+### Alternation
+
+You'll use alternation to pick between alternative patterns using the | special character. For example:
+
+```{r}
+x <- c("abcdefg", "aaa  ", "xyz123")
+
+str_view(x, "abc|xyz")
+```
+
+Sometimes, you'll need to specify which specific characters to use as alternatives, if the alternation is inside of a longer string. This is done by enclosing them in parentheses. For example:
+
+```{r}
+str_view(c("grey", "gray", "black"), "gr(e|a)y")
+```
+
+### Repetition
+
+Next, we will learn how to control how many times a pattern matches. We have already learned how to match exactly once with ".".
+
+  ?: 0 or 1
+  +: 1 or more
+  *: 0 or more
+  
+To illustrate this, here's your Roman Empire reference for the week:
+  
+```{r}
+x <- "1888 is the longest year in Roman numerals: MDCCCLXXXVIII"
+str_view(x, "CC?")
+str_view(x, "CC+")
+str_view(x, 'C[LX]+')
+```
+
+You can specify the exact number of matches you want using curly brackets:
+
+  {n}: exactly n
+  {n,}: n or more
+  {,m}: at least m
+  {n,m}: between n and m
+  
+```{r}
+str_view(x, "C{2}")
+str_view(x, "C{2,}")
+str_view(x, "C{2,3}")
+```
+
+### stringr functions
+
+Now that you know how to use regexes, we will learn how to apply them using the stringr functions. You can:
+  - Determine which strings match a pattern.
+  - Find the positions of matches.
+  - Extract the content of matches.
+  - Replace matches with new values.
+  - Split a string based on a match.
+  
+Be careful when deciding to use regular expressions. They are a powerful tool, but you can get bogged down. If you get stuck, try breaking the problem down into smaller pieces and writing multiple lines of code, or using multiple pipes with str_ functions to get to the solution.
+
+As a cautionary tale, consider this email address validation regex:
+https://r4ds.had.co.nz/strings.html
+
+
+### Detecting matches
+
+So far, we have used str_view() to show us how regexes match strings. Now we will move on to utilizing them in stringr functions.
+
+To determine if a character vector matches a pattern, use str_detect(). This will return a logical vector, with TRUE if the element matches, FALSE if not:
+```{r}
+x <- c("apple", "banana", "pear")
+str_detect(x, "e")
+```
+
+When you have logical conditions, like "match a or b but not c unless d", it is often more effective to combine multiple str_detect() calls with R's built-in logical operators, rather than trying to accomplish it with a single regex.
+
+For example, here are two ways to find all words that don't have vowels:
+```{r}
+# Find all words containing at least one vowel, and negate
+no_vowels_1 <- !str_detect(words, "[aeiou]")
+# Find all words consisting only of consonants (non-vowels)
+no_vowels_2 <- str_detect(words, "^[^aeiou]+$")
+identical(no_vowels_1, no_vowels_2)
+```
+
+no_vowels_1 has the same results, but it was easier to write and read it.
+
+A common use of str_detect() is to select the elements that match a pattern. You can do this with logical subsetting, or the convenient str_subset() wrapper:
+
+```{r}
+words[str_detect(words, "x$")]
+str_subset(words, "x$")
+```
+
+If you need counts instead of the matches, you can use str_count():
+```{r}
+x <- c("apple", "banana", "pear")
+str_count(x, "a")
+```
+
+To save the matches into your data frame, use mutate():
+```{r}
+# Save our words into a data frame
+df <- tibble(
+  word = words, 
+  i = seq_along(word)
+)
+
+df |> 
+  mutate(
+    vowels = str_count(word, "[aeiou]"),
+    consonants = str_count(word, "[^aeiou]")
+  )
+```
+
+### Extracting matches
+
+To get the content of a match, you can use str_extract(). We will use Harvard sentences to practice, which are in stringr::sentences.
+
+```{r}
+sentences <- stringr::sentences
+length(sentences)
+head(sentences)
+```
+
+Let's say we want to find all the sentences that contain common color names. First, we create a vector of color names, and then turn it into a single regular expression using | as the separator.
+
+```{r}
+colours <- c("red", "orange", "yellow", "green", "blue", "purple")
+colour_match <- str_c(colours, collapse = "|")
+colour_match
+```
+
+Now we can select the sentences that contain a color, and then extract the color to find out what it is:
+```{r}
+has_colour <- str_subset(sentences, colour_match)
+matches <- str_extract(has_colour, colour_match)
+head(matches)
+```
+
+Note that we only get the first match with str_extract(). We can see this by selecting the sentences with more than one match:
+
+```{r}
+more <- sentences[str_count(sentences, colour_match) > 1]
+str_view_all(more, colour_match)
+
+str_extract(more, colour_match)
+```
+
+To get all of the matches, use str_extract_all(), which returns a list of the matches.
+
+```{r}
+str_extract_all(more, colour_match)
+```
+
+
+This is a common pattern in the stringr functions, to add _all to functions to get all matches, and to only get the first by default. It makes the code simpler to use -- we don't have to work with lists by default, but add _all when we need multiple matches.
+
+### Replacing matches
+
+str_replace() and str_replace_all() allow you to replace matches with new strings. The simplest use is to replace a pattern with a fixed string:
+```{r}
+x <- c("apple", "pear", "banana")
+str_replace(x, "[aeiou]", "-")
+str_replace_all(x, "[aeiou]", "-")
+```
+
+With str_replace_all() you can perform multiple replacements by supplying a named vector:
+
+```{r}
+x <- c("1 house", "2 cars", "3 people")
+x
+str_replace_all(x, c("1" = "one", "2" = "two", "3" = "three"))
+```
+
+### Splitting
+
+Use str_split() to break a string up into pieces. This is often used to split sentences into words:
+```{r}
+sentences |>
+  head(5) |> 
+  str_split(" ")
+```
+
+Note that this will return a list. To get a vector when you only have one list element, you can do:
+```{r}
+"a|b|c|d" %>% 
+  str_split("\\|") %>% 
+  .[[1]]
+```
+
+This is one of the cases where we have to use the %>% pipe, since the base R pipe can't be combined with the list reference ".[[1]]".
+
+If a matrix would be easier to work with than a list, you can use simplify=TRUE:
+```{r}
+sentences %>%
+  head(5) %>% 
+  str_split(" ", simplify = TRUE)
+```
+
+### Resources
+
+This open lab was based on the Strings chapter of R for Data Science by Hadley Wickham:
+https://r4ds.had.co.nz/strings.html
+
+For a quick reference on stringr, check out the cheatsheet:
+https://github.com/rstudio/cheatsheets/blob/main/strings.pdf
+
+If you want even more string functions, the stringi package probably has what you need:
+https://cran.r-project.org/web/packages/stringi/stringi.pdf
+
+It has date and time functions too!
+
+### DVS Resources
+Visit https://go.ncsu.edu/getdatahelp for help with data science. You can email us, chat with a Data Science Consultant, or book a 30-minute consultation with a Data Science Consultant.
+
+To find out more about upcoming library workshops, visit https://lib.ncsu.edu/workshops.
+The Data & Visualization workshops offered by DVS are at https://www.lib.ncsu.edu/workshops/category/data-and-visualization
+
+### Evaluation
+Please take a few minutes to fill out the workshop eval before you leave: https://go.ncsu.edu/dvs-eval

@@ -1,0 +1,289 @@
+---
+title: "dates"
+author: "Joddy"
+date: "2023-10-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Working with dates in R
+
+Now we will begin to build skills with dates and times in R. Date and time data are common data types, with many difficult quirks to learn how to deal with.
+
+For example, when creating date data, how do you handle leap years? Do we need to know the full rules for when a year has 366 days?
+
+When working with time data, daylight savings time can cause headaches. I once wrote a script for a lab system that worked perfectly -- until daylight savings time started. It crashed and took the whole lab offline until I rewrote the time handling.
+
+Base R has functions for working with date/time data, but it has some limitations. The lubridate package from tidyverse overcomes those limitations, while making it easier to work with dates and times in R.
+
+To load it, you can use library(tidyverse), since lubridate is in that package by default. If you only want to use the lubridate library (and are not using the other tidyverse tools in your code), it may make more sense to load only lubridate with library(lubridate).
+
+```{r}
+library(tidyverse)
+# or:
+# library(lubridate)
+
+# Example data
+library(nycflights13)
+```
+
+### Data types
+
+There are 3 main data types we use:
+- date
+- time
+- date-time (or POSIXct)
+
+The date-time is a date and a time, combined into one value. A timestamp is a good example of a datetime.
+
+### Getting the current time
+
+To get the current date, and the current date-time, you can run:
+```{r}
+# date
+today()
+
+# date-time
+now()
+```
+
+Notice that the output from now() contains the date in YYYY-MM-DD format, the time in HH:MM:SS format, and the time zone (EDT, which is Eastern Daylight Time).
+
+### Importing date data
+
+If you are importing from csv, and the date is formatted using the ISO8601 standard (https://xkcd.com/1179/), it will be recognized automatically. ISO8601 is the internationally recognized way to format a date or date-time. For the official ISO standard definition, visit https://www.iso.org/iso-8601-date-and-time-format.html.
+
+October 12, 2023 would be formatted as:
+2023-10-12
+
+The ambiguity between MDY and DMY systems is alleviated with ISO8601. MDY format, common in the US, would be 10-12-2023. DMY would be 12-10-2023. However, if we were looking at a date without knowing which format was used, we might think "12-10-2023" was referring to December 10, 2023. The standard format is unambiguous, so it should be used instead whenever possible.
+
+If your data has already been created, and is not in ISO8601 format, you'll have to do some work to get the dates to import correctly. As we will see, you'll need to specify the date format.
+
+The following date is totally ambiguous, so let's see what we get using different formats:
+```{r}
+csv <- "
+  date
+  01/02/15
+"
+
+read_csv(csv, col_types = cols(date = col_date("%m/%d/%y")))
+
+read_csv(csv, col_types = cols(date = col_date("%d/%m/%y")))
+
+read_csv(csv, col_types = cols(date = col_date("%y/%m/%d")))
+```
+
+How do the date formats work (the strings like "%m/%d/%y")? Here is a reference table with all the available date formats: https://r4ds.hadley.nz/datetimes.html#tbl-date-formats. These formats are standard across many programming languages, so if you have some experience with another language, you may already be familiar.
+
+Let's break down one of the lines in our import above. 
+
+read_csv(csv, col_types = cols(date = col_date("%m/%d/%y")))
+
+1. read_csv() is the general function from readr for importing a csv file.
+2. The first argument is the file we are importing (in this case it's stored in a variable, csv).
+3. The second argument, col_types=, allows us to declare the data type for specific columns.
+4. We are wrapping our date column in cols()
+5. Here is where the date definition is, "date =" is the column our date values will get assigned to.
+6. col_date() is our date parsing function. It expects a date format string.
+7. The actual date format string is "%m%d%y". Looking at the reference chart, this is:
+  i.    %m: numeric month
+  ii.   %d: 2 digit numeric day of month
+  iii.  %y: 2 digit year
+  
+When you don't have an ISO8601 formatted date, you will need to look at the existing format, and encode it into the date format strings using the available options (like the %d, %m, %y codes). When you are starting out, trying different formats until one of them produces correct values is a good approach.
+
+### Building dates from components
+
+In the NYC flights practice dataset, the date is split into 3 columns: year, month, and day. We also have hour and minute columns. We can build a date or date-time variable out of these columns using mutate:
+```{r}
+head(flights)
+
+flights_dt <- flights |> 
+  mutate(departure_dt = make_datetime(year, month, day, hour, minute),
+         departure_date = make_date(year, month, day))
+```
+
+### Converting between date and date-time
+
+Sometimes, you may need to switch between date and date-time. To do this, use the as_datetime() and as_date() functions:
+```{r}
+# Turn the current date into a datetime
+as_datetime(today())
+
+# Turn the current datetime into a date
+as_date(now())
+
+```
+
+You can pull out individual parts of the date with the accessor functions year(), month(), mday() (day of the month), yday() (day of the year), wday() (day of the week), hour(), minute(), and second().
+
+```{r}
+# ymd_hms parses the date from a string. For more on parsing date strings, see the ymd_hms documentation.
+datetime <- ymd_hms("2026-07-08 12:34:56")
+
+year(datetime)
+
+month(datetime)
+#> [1] 7
+mday(datetime)
+#> [1] 8
+
+yday(datetime)
+#> [1] 189
+wday(datetime)
+```
+
+### Rounding
+
+When plotting date data, we often need to round the days to the nearest week, or round down to the year. For this, you can use:
+  floor_date(): round down to the nearest unit
+  ceiling_date(): round up to the nearest unit
+  round_date(): round to the nearest unit (up or down, depending on which is closer)
+  
+Rounding can help if you are trying to plot events on a weekly basis. So, to plot the number of flights per week:
+
+```{r}
+flights_dt |> 
+  count(week = floor_date(departure_dt, "week")) |> 
+  ggplot(aes(x = week, y = n)) +
+  geom_line() + 
+  geom_point()
+```
+
+### Time spans
+
+lubridate allows us to perform arithmetic on dates -- we can add and subtract them. There are 3 main ways to define time spans:
+  Duration: an exact number of seconds
+  Period: human units like weeks and months
+  Interval: human units with a start and an end
+  
+When we only care about the numeric difference between two dates, we can use durations. Period helps if there is a human context, as we saw above in the weekly departures plot. Interval is helpful if the start and end points are important.
+
+#### Durations
+
+When you subtract two dates in R, you get a difftime. difftime records a time span of seconds, minutes, hours, days, or weeks.
+
+```{r}
+# How old is Joddy?
+j_age <- today() - ymd("1985-11-23")
+j_age
+```
+
+This can be inconvenient at times. The lubridate alternative is duration objects. You can convert a difftime using as.duration():
+
+```{r}
+as.duration(j_age)
+```
+
+You can create durations using constructors from lubridate:
+```{r}
+dseconds(15)
+
+dminutes(10)
+
+dhours(c(12, 24))
+
+ddays(0:5)
+
+dweeks(3)
+
+dyears(1)
+```
+
+Larger units like years are not perfect. For example, a year duration is 365.25 days, since that is the length of the average year.
+
+#### Periods
+
+Periods are the solution for working with human dates and times. They can also be created using constructors:
+```{r}
+hours(c(12, 24))
+
+days(7)
+
+months(1:6)
+```
+
+Periods can be added to dates, like durations, but their behavior is more predictable:
+```{r}
+# A leap year
+ymd("2024-01-01") + dyears(1)
+
+ymd("2024-01-01") + years(1)
+
+# Daylight saving time
+one_am <- ymd_hms("2026-03-08 01:00:00", tz = "America/New_York")
+one_am + ddays(1)
+
+one_am + days(1)
+```
+
+Let's use periods to fix an issue with the flight dates. Some planes appear to have arrived at their destination before they departed from New York City.
+```{r}
+flights_dt |> 
+  filter(arr_time < dep_time) 
+```
+
+What is happening here? These are overnight flights. We'll fix this by adding days(1) to the arrival time of each overnight flight:
+
+```{r}
+flights_dt <- flights_dt |> 
+  mutate(
+    overnight = arr_time < dep_time,
+    arr_time = arr_time + days(overnight),
+    sched_arr_time = sched_arr_time + days(overnight)
+  )
+
+flights_dt |> 
+  filter(arr_time < dep_time)
+```
+
+Now all the arrival dates make sense!
+
+### Intervals
+
+What does dyears(1) / ddays(365) return? It’s not quite one, because dyears() is defined as the number of seconds per average year, which is 365.25 days.
+
+What does years(1) / days(1) return? Well, if the year was 2015 it should return 365, but if it was 2016, it should return 366! There’s not quite enough information for lubridate to give a single clear answer. What it does instead is give an estimate.
+
+```{r}
+dyears(1) / ddays(365)
+
+years(1) / days(1)
+```
+
+Intervals help us specify an interval in time, by declaring the starting point and the end point. This extra context removes the ambiguity inherent in our time system when we are talking about time spans.
+
+You can create an interval by writing start %--% end:
+
+```{r}
+y2023 <- ymd("2023-01-01") %--% ymd("2024-01-01")
+y2024 <- ymd("2024-01-01") %--% ymd("2025-01-01")
+
+y2023
+
+y2024
+```
+
+You could then divide it by days() to find out how many days fit in the year:
+
+```{r}
+y2023 / days(1)
+
+y2024 / days(1)
+```
+
+Now we can accurately represent these year intervals.
+
+### Summary
+
+Now we have walked through lubridate's most important functions. Now you are ready to handle common data cleaning and data preparation tasks for date and time data!
+
+
+
+
+
+

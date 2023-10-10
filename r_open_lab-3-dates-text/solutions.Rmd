@@ -1,0 +1,194 @@
+---
+title: "Exercises"
+author: "Joddy"
+date: "2023-10-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Strings
+
+### Collapsing
+1. In your own words, describe the difference between the sep and collapse arguments to str_c().
+
+The sep argument is the string inserted between arguments to str_c(), while collapse is the string used to separate any elements of the character vector into a character vector of length one.
+
+2. Use str_length() and str_sub() to extract the middle character from a string. What will you do if the string has an even number of characters?
+The following function extracts the middle character. If the string has an even number of characters the choice is arbitrary. We choose to select n / 2, because that case works even if the string is only of length one. A more general method would allow the user to select either the floor or ceiling for the middle character of an even string.
+
+```{r}
+x <- c("a", "abc", "abcd", "abcde", "abcdef")
+L <- str_length(x)
+m <- ceiling(L / 2)
+str_sub(x, m, m)
+```
+
+### Regular expressions
+3. Given the corpus of common words in stringr::words, create regular expressions that find all words that:
+```{r}
+words <- stringr::words
+```
+
+
+4. Start with “y”.
+```{r}
+str_view(stringr::words, "^y", match = TRUE)
+```
+
+5. End with “x”
+```{r}
+str_view(stringr::words, "x$", match = TRUE)
+```
+
+6. Are exactly three letters long. (Don’t cheat by using str_length()!)
+```{r}
+str_view(stringr::words, "^...$", match = TRUE)
+```
+
+7. Have seven letters or more.
+```{r}
+str_view(stringr::words, ".......", match = TRUE)
+```
+
+Since this list is long, you might want to use the match argument to str_view() to show only the matching or non-matching words.
+
+8. Create regular expressions to find all words that:
+
+Start with a vowel.
+```{r}
+str_subset(stringr::words, "^[aeiou]")
+```
+
+That only contain consonants. (Hint: thinking about matching “not”-vowels.)
+```{r}
+str_subset(stringr::words, "[aeiou]", negate=TRUE)
+```
+
+End with ed, but not with eed.
+```{r}
+str_subset(stringr::words, "[^e]ed$")
+```
+
+End with ing or ise.
+```{r}
+str_subset(stringr::words, "i(ng|se)$")
+```
+
+9. Create a regular expression that will match telephone numbers as commonly written in your country.
+The answer to this will vary by country.
+
+For the United States, phone numbers have a format like 123-456-7890.
+
+```{r}
+x <- c("123-456-7890", "(123)456-7890", "(123) 456-7890", "1235-2351")
+str_view(x, "\\d\\d\\d-\\d\\d\\d-\\d\\d\\d\\d")
+```
+
+See if you can figure out the others!
+
+10. Describe the equivalents of ?, +, * in {m,n} form.
+```{r}
+# ?
+str_view(x, "CC{0,1}")
+
+# +
+str_view(x, "CC{1,}")
+
+# *
+str_view_all(x, "C[LX]{0,}")
+```
+
+11. Create regular expressions to find all words that:
+
+Start with three consonants.
+```{r}
+str_view(words, "^[^aeiou]{3}", match = TRUE)
+```
+
+Have three or more vowels in a row.
+```{r}
+str_view(words, "[aeiou]{3,}", match = TRUE)
+```
+
+Have two or more vowel-consonant pairs in a row.
+```{r}
+str_view(words, "([aeiou][^aeiou]){2,}", match = TRUE)
+```
+
+### Coding with stringr
+12. For each of the following challenges, try solving it by using both a single regular expression, and a combination of multiple str_detect() calls.
+
+Find all words that start or end with x.
+```{r}
+words[str_detect(words, "^x|x$")]
+
+start_with_x <- str_detect(words, "^x")
+end_with_x <- str_detect(words, "x$")
+words[start_with_x | end_with_x]
+```
+
+Find all words that start with a vowel and end with a consonant.
+```{r}
+str_subset(words, "^[aeiou].*[^aeiou]$") %>% head()
+
+start_with_vowel <- str_detect(words, "^[aeiou]")
+end_with_consonant <- str_detect(words, "[^aeiou]$")
+words[start_with_vowel & end_with_consonant] %>% head()
+```
+
+13. From the Harvard sentences data, extract:
+
+The first word from each sentence.
+```{r}
+
+```
+
+All words ending in ing.
+```{r}
+
+```
+
+All plurals.
+```{r}
+
+```
+
+14. Split up a string like "apples, pears, and bananas" into individual components.
+```{r}
+
+```
+
+Extra challenge (for after the workshop): Solve the beginner regexp crosswords at https://regexcrossword.com/challenges/beginner.
+
+## Dates
+
+1. What does the tzone argument to today() do? Why is it important?
+
+It determines the time-zone of the date. Since different time-zones can have different dates, the value of today() can vary depending on the time-zone specified.
+
+2. Create a vector of dates giving the first day of every month in 2015. 
+
+A vector of the first day of the month for every month in 2015:
+```{r}
+ymd("2015-01-01") + months(0:11)
+```
+
+3. Create a vector of dates giving the first day of every month in the current year.
+
+To get the vector of the first day of the month for this year, we first need to figure out what this year is, and get January 1st of it. I can do that by taking today() and truncating it to the year using floor_date():
+```{r}
+floor_date(today(), unit = "year") + months(0:11)
+```
+
+4. Create an interval of your lifespan so far using your birthday as the starting point, and today() as the end point, and then use years(1) and the floor() function to round your age to an integer.
+
+```{r}
+bday = "1985-11-23"
+my_age_interval <- bday %--% today()
+my_age <- floor(my_age_interval / years(1))
+```
+
+
