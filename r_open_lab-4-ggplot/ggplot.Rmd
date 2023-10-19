@@ -46,6 +46,7 @@ packages <- c(
   'remotes'
 )
 # Uncomment the next lines (remove the first #) to install the packages. Comment again when you have installed them.
+install.packages("remotes")
 install.packages(packages)
 remotes::install_github("hrbrmstr/hrbrthemes")
 # Load standard packages
@@ -151,10 +152,18 @@ ggplot(mpg) +
 take control by adding one explicitly. All scales follow the same naming 
 conventions.
 
+Color brewer website: https://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3
 ```{r}
 ggplot(mpg) + 
   geom_point(aes(x = displ, y = hwy, colour = class)) + 
   scale_colour_brewer(type = 'qual')
+
+# See our color palette options
+RColorBrewer::display.brewer.all()
+
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy, colour = class)) + 
+  scale_colour_brewer(palette="Pastel1")
 ```
 
 Positional mappings (x and y) also have associated scales.
@@ -208,7 +217,7 @@ ggplot(mpg) +
   scale_x_continuous(expand = c(0, NA)) + 
   theme_minimal() + 
   theme(
-    text = element_text('Avenir Next Condensed'),
+    text = element_text('Arial'),
     strip.text = element_text(face = 'bold', hjust = 0),
     plot.caption = element_text(face = 'italic'),
     panel.grid.major = element_line('white', size = 0.5),
@@ -240,7 +249,7 @@ There are many different transitions that control how data is interpreted for
 animation, as well as a range of other animation specific features
 
 ```{r}
-ggplot(mpg) + 
+anim <- ggplot(mpg) + 
   geom_bar(aes(x = factor(cyl)))
 ggplot(mpg) + 
   geom_bar(aes(x = factor(cyl))) + 
@@ -248,6 +257,7 @@ ggplot(mpg) +
   transition_states(states = year) + 
   enter_grow() + 
   exit_fade()
+anim_save("example.gif")
 ```
 
 ### Annotation
@@ -297,10 +307,18 @@ p <- ggplot(mtcars, aes(mpg, wt)) +
     subtitle = 'A plot to show off different themes',
     caption = 'Source: It’s mtcars — everyone uses it'
   )
+
+
+
 library(hrbrthemes)
+
+# p + theme_modern_rc()
+# p + theme_economist()
+p + theme_fivethirtyeight()
+
 p + 
-  scale_colour_ipsum() + 
-  theme_ipsum()
+   scale_colour_ipsum() + 
+   theme_ipsum()
 ```
 
 ```{r}
