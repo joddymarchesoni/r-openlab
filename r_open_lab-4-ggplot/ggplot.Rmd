@@ -1,0 +1,375 @@
+---
+title: "R Open Lab 4 - Advanced ggplot2"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Advanced ggplot2
+
+Today we will review the basics of data visualization in R using ggplot2, and then learn how to use new packages for other visualization types.
+
+To learn more about visualizations in R, let's take a look at the R Graph Gallery:
+https://r-graph-gallery.com
+
+This site has lots of different plots you can make in R, with instructions on which package to use, and code examples to help you get started.
+
+### Resources (crtl-click or cmd-click to open the pages)
+This open lab was adapted from https://github.com/thomasp85/ggplot2_workshop (video for original workshop available at: https://www.youtube.com/watch?v=h29g21z0a68)
+Visit https://go.ncsu.edu/getdatahelp for help with data science. You can email us, chat with a Data Science Consultant,
+or book a 30-minute consultation with a Data Science Consultant.
+To find out more about upcoming library workshops, visit https://lib.ncsu.edu/workshops.
+The Data & Visualization workshops offered by DVS are at https://www.lib.ncsu.edu/workshops/category/data-and-visualization
+
+### Eval: Please take a few minutes to fill out the workshop eval before you leave: https://go.ncsu.edu/dvs-eval
+
+### Dependencies
+This document comes with a list of required packages. 
+
+```{r, echo=FALSE}
+packages <- c(
+  'ggplot2',
+  'ggrepel',
+  'patchwork',
+  'ggraph',
+  'dplyr',
+  'gganimate',
+  'gifski',
+  'ggforce',
+  'ggthemes',
+  'maps',
+  'sf',
+  'tidyr',
+  'concaveman',
+  'remotes'
+)
+# Uncomment the next lines (remove the first #) to install the packages. Comment again when you have installed them.
+install.packages(packages)
+remotes::install_github("hrbrmstr/hrbrthemes")
+# Load standard packages
+library(ggplot2)
+```
+
+### Datasets
+We will use an assortment of datasets throughout the document. The purpose is 
+mostly to showcase different plots, and less on getting some divine insight into
+the world. While not necessary we will call `data(<dataset>)` before using a new
+dataset to indicate the introduction of a new dataset.
+
+## Review from Data Visualization with R
+We will look at the basic ggplot2 use using the faithful dataset, giving 
+information on the eruption pattern of the Old Faithful geyser in Yellowstone
+National Park.
+
+```{r}
+data("faithful")
+# Basic scatterplot
+ggplot(data = faithful, 
+       mapping = aes(x = eruptions, y = waiting)) + 
+  geom_point()
+# Data and mapping can be given both as global (in ggplot()) or per layer
+ggplot() + 
+  geom_point(mapping = aes(x = eruptions, y = waiting),
+             data = faithful)
+```
+
+If an aesthetic is linked to data it is put into `aes()`
+
+```{r}
+ggplot(faithful) + 
+  geom_point(aes(x = eruptions, y = waiting, colour = eruptions < 3))
+```
+
+If you simple want to set a value, put it outside of `aes()`
+
+```{r}
+ggplot(faithful) + 
+  geom_point(aes(x = eruptions, y = waiting),
+             colour = 'steelblue')
+```
+
+Some geoms only need a single mapping and will calculate the rest for you
+
+```{r}
+ggplot(faithful) + 
+  geom_histogram(aes(x = eruptions))
+```
+
+geoms are drawn in the order they are added. The point layer is thus drawn on
+top of the density contours in the example below.
+
+```{r}
+ggplot(faithful, aes(x = eruptions, y = waiting)) + 
+  geom_density_2d() + 
+  geom_point()
+```
+
+### Stat
+We will use the `mpg` dataset giving information about fuel economy on different 
+car models.
+
+Every geom has a stat. This is why new data (`count`) can appear when using 
+`geom_bar()`.
+
+```{r}
+data("mpg")
+ggplot(mpg) + 
+  geom_bar(aes(x = class))
+```
+
+The stat can be overwritten. If we have precomputed count we don't want any 
+additional computations to perform and we use the `identity` stat to leave the 
+data alone
+
+```{r}
+library(dplyr)
+mpg_counted <- mpg %>% 
+  count(class, name = 'count')
+ggplot(mpg_counted) + 
+  geom_bar(aes(x = class, y = count), stat = 'identity')
+```
+
+Most obvious geom+stat combinations have a dedicated geom constructor. The one
+above is available directly as `geom_col()`
+
+```{r}
+ggplot(mpg_counted) + 
+  geom_col(aes(x = class, y = count))
+```
+
+### Scales
+Scales define how the mapping you specify inside `aes()` should happen. All 
+mappings have an associated scale even if not specified.
+
+```{r}
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy, colour = class))
+```
+
+take control by adding one explicitly. All scales follow the same naming 
+conventions.
+
+```{r}
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy, colour = class)) + 
+  scale_colour_brewer(type = 'qual')
+```
+
+Positional mappings (x and y) also have associated scales.
+
+```{r}
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy)) + 
+  scale_x_continuous(breaks = c(3, 5, 6)) + 
+  scale_y_continuous(trans = 'log10')
+```
+
+### Facets
+The facet defines how data is split among panels. The default facet 
+(`facet_null()`) puts all the data in a single panel, while `facet_wrap()` and
+`facet_grid()` allows you to specify different types of small multiples
+
+```{r}
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy)) + 
+  facet_wrap(~ class)
+```
+
+```{r}
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy)) + 
+  facet_grid(year ~ drv)
+```
+
+### Theme
+Theming defines the feel and look of your final visualisation and is something
+you will normally defer to the final polishing of the plot. It is very easy to 
+change looks with a prebuild theme
+
+```{r}
+ggplot(mpg) + 
+  geom_bar(aes(y = class)) + 
+  facet_wrap(~year) + 
+  theme_minimal()
+```
+
+Further adjustments can be done in the end to get exactly the look you want
+
+```{r}
+ggplot(mpg) + 
+  geom_bar(aes(y = class)) + 
+  facet_wrap(~year) + 
+  labs(title = "Number of car models per class",
+       caption = "source: http://fueleconomy.gov",
+       x = NULL,
+       y = NULL) +
+  scale_x_continuous(expand = c(0, NA)) + 
+  theme_minimal() + 
+  theme(
+    text = element_text('Avenir Next Condensed'),
+    strip.text = element_text(face = 'bold', hjust = 0),
+    plot.caption = element_text(face = 'italic'),
+    panel.grid.major = element_line('white', size = 0.5),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.y = element_blank(),
+    panel.ontop = TRUE
+  )
+```
+
+## Extensions
+While ggplot2 comes with a lot of batteries included, the extension ecosystem 
+provides priceless additional features
+
+### Animation
+ggplot2 is usually focused on static plots, but gganimate extends the API and
+grammar to describe animations. As such it feels like a very natural extension
+of using ggplot2
+
+```{r}
+ggplot(economics) + 
+  geom_line(aes(x = date, y = unemploy))
+library(gganimate)
+ggplot(economics) + 
+  geom_line(aes(x = date, y = unemploy)) + 
+  transition_reveal(along = date)
+```
+
+There are many different transitions that control how data is interpreted for
+animation, as well as a range of other animation specific features
+
+```{r}
+ggplot(mpg) + 
+  geom_bar(aes(x = factor(cyl)))
+ggplot(mpg) + 
+  geom_bar(aes(x = factor(cyl))) + 
+  labs(title = 'Number of cars in {closest_state} by number of cylinders') + 
+  transition_states(states = year) + 
+  enter_grow() + 
+  exit_fade()
+```
+
+### Annotation
+Text is a huge part of storytelling with your visualisation. Historically, 
+textual annotations has not been the best part of ggplot2 but new extensions 
+make up for that.
+
+Standard geom_text will often result in overlaping labels
+```{r}
+ggplot(mtcars, aes(x = disp, y = mpg)) + 
+  geom_point() + 
+  geom_text(aes(label = row.names(mtcars)))
+```
+
+ggrepel takes care of that
+
+```{r}
+library(ggrepel)
+ggplot(mtcars, aes(x = disp, y = mpg)) + 
+  geom_point() + 
+  geom_text_repel(aes(label = row.names(mtcars)))
+```
+
+If you want to highlight certain parts of your data and describe it, the 
+`geom_mark_*()` family of geoms have your back
+
+```{r}
+library(ggforce)
+ggplot(mtcars, aes(x = disp, y = mpg)) +
+  geom_point() + 
+  geom_mark_ellipse(aes(filter = gear == 4,
+                        label = '4 gear cars',
+                        description = 'Cars with fewer gears tend to both have higher yield and lower displacement'))
+```
+
+### Looks
+Many people have already designed beautiful (and horrible) themes for you. Use
+them as a base
+
+```{r}
+p <- ggplot(mtcars, aes(mpg, wt)) +
+  geom_point(aes(color = factor(carb))) +
+  labs(
+    x = 'Fuel efficiency (mpg)', 
+    y = 'Weight (tons)',
+    title = 'Seminal ggplot2 example',
+    subtitle = 'A plot to show off different themes',
+    caption = 'Source: It’s mtcars — everyone uses it'
+  )
+library(hrbrthemes)
+p + 
+  scale_colour_ipsum() + 
+  theme_ipsum()
+```
+
+```{r}
+library(ggthemes)
+p + 
+  scale_colour_excel() + 
+  theme_excel()
+```
+
+## Drawing anything
+
+```{r}
+states <- c(
+  'eaten', "eaten but said you didn\'t", 'cat took it', 'for tonight',
+  'will decompose slowly'
+)
+pie <- data.frame(
+  state = factor(states, levels = states),
+  amount = c(4, 3, 1, 1.5, 6),
+  stringsAsFactors = FALSE
+)
+ggplot(pie) + 
+  geom_col(aes(x = 0, y = amount, fill = state))
+```
+
+```{r}
+ggplot(pie) + 
+  geom_col(aes(x = 0, y = amount, fill = state)) + 
+  coord_polar(theta = 'y')
+```
+
+```{r}
+ggplot(pie) + 
+  geom_col(aes(x = 0, y = amount, fill = state)) + 
+  coord_polar(theta = 'y') + 
+  scale_fill_tableau(name = NULL,
+                     guide = guide_legend(ncol = 2)) + 
+  theme_void() + 
+  theme(legend.position = 'top', 
+        legend.justification = 'left')
+```
+
+```{r}
+ggplot(pie) + 
+  geom_arc_bar(aes(x0 = 0, y0 = 0, r0 = 0, r = 1, amount = amount, fill = state), stat = 'pie') + 
+  coord_fixed()
+```
+
+```{r}
+ggplot(pie) + 
+  geom_arc_bar(aes(x0 = 0, y0 = 0, r0 = 0, r = 1, amount = amount, fill = state), stat = 'pie') + 
+  coord_fixed() + 
+  scale_fill_tableau(name = NULL,
+                     guide = guide_legend(ncol = 2)) + 
+  theme_void() + 
+  theme(legend.position = 'top', 
+        legend.justification = 'left')
+```
+
+```{r}
+ggplot(mpg) + 
+  # geom_bar(aes(x = hwy), stat = 'bin')
+  geom_histogram(aes(x = hwy))
+```
+
+```{r}
+ggplot(mpg) + 
+  geom_bar(aes(x = hwy)) + 
+  scale_x_binned(n.breaks = 30, guide = guide_axis(n.dodge = 2))
+```
+
+### Eval: Please take a few minutes to fill out the workshop eval before you leave: https://go.ncsu.edu/dvs-eval

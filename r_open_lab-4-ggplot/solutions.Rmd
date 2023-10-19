@@ -1,0 +1,216 @@
+---
+title: "solutions"
+author: "Joddy"
+date: "2023-10-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Review
+Modify the code below to make the points larger squares and slightly transparent.
+See `?geom_point` for more information on the point layer.
+
+```{r}
+ggplot(faithful) + 
+  geom_point(aes(x = eruptions, y = waiting), alpha=0.9, size=3, shape="square")
+```
+
+Hint 1: transparency is controlled with `alpha`, and shape with `shape`
+Hint 2: remember the difference between mapping and setting aesthetics
+
+See https://ggplot2.tidyverse.org/articles/ggplot2-specs.html for more details about alpha, shape, and size aesthetics.
+
+* * *
+
+Add a line that separates the two point distributions. See `?geom_abline` for 
+how to draw straight lines from a slope and intercept.
+
+```{r}
+ggplot(faithful) + 
+  geom_point(aes(x = eruptions, y = waiting)) +
+  geom_vline(xintercept=3, color="red")
+```
+
+### Stat
+While most people use `geom_*()` when adding layers, it is just as valid to add 
+a `stat_*()` with an attached geom. Look at `geom_bar()` and figure out which
+stat it uses as default. Then modify the code to use the stat directly instead
+(i.e. adding `stat_*()` instead of `geom_bar()`)
+
+```{r}
+ggplot(mpg) + 
+  stat_count(aes(x = class))
+```
+
+* * *
+
+### Scales
+Use `RColorBrewer::display.brewer.all()` to see all the different palettes from
+Color Brewer and pick your favourite. Modify the code below to use it
+
+```{r}
+RColorBrewer::display.brewer.all()
+
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy, colour = class)) + 
+  scale_colour_brewer(palette="Pastel1")
+```
+
+* * *
+
+### Facets
+One of the great things about facets is that they share the axes between the 
+different panels. Sometimes this is undesirable though, and the behavior can
+be changed with the `scales` argument. Experiment with the different possible
+settings in the plot below:
+
+```{r}
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy)) + 
+  facet_wrap(~ drv, scales="free")
+
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy)) + 
+  facet_wrap(~ drv, scales="free_x")
+
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy)) + 
+  facet_wrap(~ drv, scales="free_y")
+```
+
+* * *
+
+Facets can be based on multiple variables by adding them together. Try to 
+recreate the same panels present in the plot below by using `facet_wrap()`
+
+```{r}
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy)) + 
+  facet_grid(year ~ drv)
+
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy)) + 
+  facet_wrap(~ year + drv)
+```
+
+### Theme
+Themes can be overwhelming, especially as you often try to optimize for beauty 
+while you learn. To remove the last part of the equation, the exercise is to 
+take the plot given below and make it as hideous as possible using the theme
+function. Go absolutely crazy, but take note of the effect as you change 
+different settings.
+
+```{r}
+ggplot(mpg) + 
+  geom_bar(aes(y = class, fill = drv)) + 
+  facet_wrap(~year) + 
+  labs(title = "Number of car models per class",
+       caption = "source: http://fueleconomy.gov",
+       x = 'Number of cars',
+       y = NULL)
+```
+
+### Animation
+The animation below will animate between points showing cars with different 
+cylinders.
+
+```{r}
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy, group=cyl)) + 
+  ggtitle("Cars with {closest_state} cylinders") + 
+  transition_states(factor(cyl))
+```
+
+gganimate uses the `group` aesthetic to match observations between states. By 
+default the group aesthetic is set to the same value, so observations are 
+matched by their position (first row of 4 cyl is matched to first row of 5 cyl 
+etc.). This is clearly wrong here (why?). Add a mapping to the `group` aesthetic
+to ensure that points do not move between the different states.
+
+* * *
+
+In the presence of discrete aesthetic mappings (`colour` below), the group is
+deduced if not given. The default behavior of objects that appear and disappear
+during the animation is to simply pop in and out of existence. `enter_*()` and
+`exit_*()` functions can be used to control this behavior. Experiment with the
+different enter and exit functions provided by gganimate below. What happens if 
+you add multiple enter or exit functions to the same animation?
+
+```{r}
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy, colour = factor(cyl))) + 
+  ggtitle("Cars with {closest_state} cylinders") + 
+  transition_states(factor(cyl))
+```
+
+* * *
+
+In the animation below (as in all the other animations) the changes happens at
+constant speed. How values change during an animation is called easing and can
+be controlled using the `ease_aes()` function. Read the documentation for 
+`ease_aes()` and experiment with different easings in the animation.
+
+```{r}
+mpg2 <- tidyr::pivot_longer(mpg, c(cty,hwy))
+ggplot(mpg2) + 
+  geom_point(aes(x = displ, y = value)) + 
+  ggtitle("{if (closest_state == 'cty') 'Efficiency in city' else 'Efficiency on highway'}") + 
+  transition_states(name) +
+  ease_aes(y="bounce-in")
+
+mpg2 <- tidyr::pivot_longer(mpg, c(cty,hwy))
+ggplot(mpg2) + 
+  geom_point(aes(x = displ, y = value)) + 
+  ggtitle("{if (closest_state == 'cty') 'Efficiency in city' else 'Efficiency on highway'}") + 
+  transition_states(name) +
+  ease_aes(y="quadratic-out")
+
+mpg2 <- tidyr::pivot_longer(mpg, c(cty,hwy))
+ggplot(mpg2) + 
+  geom_point(aes(x = displ, y = value)) + 
+  ggtitle("{if (closest_state == 'cty') 'Efficiency in city' else 'Efficiency on highway'}") + 
+  transition_states(name) +
+  ease_aes(y="elastic-in-out")
+```
+
+### Annotation
+Explore the documentation for `geom_text_repel`. Find a way to ensure that the 
+labels in the plot below only repels in the vertical direction
+
+```{r}
+mtcars$label <- ""
+mtcars$label[1:10] <- rownames(mtcars)[1:10]
+ggplot(mtcars, aes(x = disp, y = mpg)) + 
+  geom_point() + 
+  geom_text_repel(aes(label = label), direction="y", nudge_y=10)
+```
+
+* * *
+
+ggforce comes with 4 different types of mark geoms. Try them all out in the code
+below:
+
+```{r}
+ggplot(mtcars, aes(x = disp, y = mpg)) +
+  geom_point() + 
+  geom_mark_ellipse(aes(filter = gear == 4,
+                        label = '4 gear cars'))
+
+ggplot(mtcars, aes(x = disp, y = mpg)) +
+  geom_point() + 
+  geom_mark_circle(aes(filter = gear == 4,
+                        label = '4 gear cars'))
+
+ggplot(mtcars, aes(x = disp, y = mpg)) +
+  geom_point() + 
+  geom_mark_rect(aes(filter = gear == 4,
+                        label = '4 gear cars'))
+
+ggplot(mtcars, aes(x = disp, y = mpg)) +
+  geom_point() + 
+  geom_mark_hull(aes(filter = gear == 4,
+                        label = '4 gear cars'))
+```
