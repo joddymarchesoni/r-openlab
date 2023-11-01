@@ -1,0 +1,103 @@
+---
+title: "Solutions"
+author: "Joddy"
+date: "2023-11-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Exercises
+
+1. Using the mtcars dataset, compute the standard deviation of every column using the appropriate map function.
+
+```{r}
+map_dbl(mtcars, sd)
+```
+
+2. Using the penguins dataset, compute the standard deviation of every numeric column in the data frame.
+
+```{r}
+# If you don't have this package installed yet
+install.packages("palmerpenguins")
+library(palmerpenguins)
+
+penguins <- palmerpenguins::penguins
+
+penguins_numeric <- map_lgl(penguins, is.numeric)
+map_dbl(penguins[penguins_numeric], sd, na.rm = TRUE)
+```
+
+3. Compute the number of levels for every factor in the penguins dataset. Hint: you will use the technique from 2. to get numeric columns, and use length() in your function to get the number of levels.
+
+```{r}
+penguins_factor <- map_lgl(penguins, is.factor)
+map_int(penguins[penguins_factor], ~ length(levels(.x)))
+```
+
+4. Using map_df(), create a report on the iris dataset summarizing each column. Include at least the column name, distinct n and type for each column.
+
+```{r}
+iris %>% map_df(~(data.frame(n_distinct = n_distinct(.x),
+                class = class(.x))),
+                .id = "variable"
+)
+```
+
+5. Create another report on the iris dataset, giving the mean, max, min, and standard deviation for all the numeric variables. Use map_lgl() to get a logical vector of numeric columns, and then use map_df() to create the report.
+
+```{r}
+iris_num <- map_lgl(iris, is.numeric)
+map_df(iris[iris_num], ~(data.frame(
+  mean = mean(.x),
+  max = max(.x),
+  min = min(.x),
+  sd = sd(.x)
+)),
+  .id = "variable")
+```
+
+
+6. Write a walk2() call to output gapminder data out to your project directory, split up by continent. Use write.csv in your walk2() function call.
+
+```{r}
+continents <- split(gapminder, gapminder$continent)
+
+paths <- file.path(getwd(), paste0("continent-", names(continents), ".csv"))
+
+walk2(continents, paths, write.csv)
+```
+
+7. Use map() to fit linear models (using lm() ) to the mtcars dataset using the formulas stored in this list:
+
+formulas <- list(
+  mpg ~ disp,
+  mpg ~ I(1 / disp),
+  mpg ~ disp + wt,
+  mpg ~ I(1 / disp) + wt
+)
+
+```{r}
+formulas <- list(
+  mpg ~ disp,
+  mpg ~ I(1 / disp),
+  mpg ~ disp + wt,
+  mpg ~ I(1 / disp) + wt
+)
+
+models <- map(formulas, lm, data = mtcars)
+```
+
+8. What does write.csv() return, i.e. what happens if you use it with map2() instead of walk2()?
+
+```{r}
+cyls <- split(mtcars, mtcars$cyl)
+paths <- file.path(tempdir(), paste0("cyl-", names(cyls), ".csv"))
+
+map2(cyls, paths, write.csv)
+```
+
+map2() returns NULL for each file.
+

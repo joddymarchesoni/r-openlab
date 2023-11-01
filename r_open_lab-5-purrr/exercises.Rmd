@@ -1,0 +1,81 @@
+---
+title: "Exercises"
+author: "Joddy"
+date: "2023-11-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Exercises
+
+1. Using the mtcars dataset, compute the standard deviation of every column using the appropriate map function.
+
+```{r}
+
+```
+
+2. Using the penguins dataset, compute the standard deviation of every numeric column in the data frame.
+
+```{r}
+# If you don't have this package installed yet
+install.packages("palmerpenguins")
+library(palmerpenguins)
+
+penguins <- palmerpenguins::penguins
+
+# Fill in the function
+penguins_numeric <- map_lgl(penguins, )
+# Fill in the function and pass na.rm = TRUE
+map_dbl(penguins[penguins_numeric],)
+```
+
+3. Compute the number of levels for every factor in the penguins dataset. Hint: you will use the technique from 2. to get numeric columns, and use length() in your function to get the number of levels.
+
+```{r}
+
+```
+
+4. Using map_df(), create a report on the iris dataset summarizing each column. Include at least the column name, distinct n and type for each column.
+
+```{r}
+
+```
+
+5. Create another report on the iris dataset, giving the mean, max, min, and standard deviation for all the numeric variables. Use map_lgl() to get a logical vector of numeric columns, and then use map_df() to create the report.
+
+```{r}
+
+```
+
+
+6. Write a walk2() call to output gapminder data out to your project directory, split up by continent. Use write.csv in your walk2() function call.
+
+```{r}
+
+```
+
+7. Use map() to fit linear models (using lm() ) to the mtcars dataset using the formulas stored in this list:
+
+formulas <- list(
+  mpg ~ disp,
+  mpg ~ I(1 / disp),
+  mpg ~ disp + wt,
+  mpg ~ I(1 / disp) + wt
+)
+
+```{r}
+
+```
+
+8. What does write.csv() return, i.e. what happens if you use it with map2() instead of walk2()?
+
+```{r}
+cyls <- split(mtcars, mtcars$cyl)
+paths <- file.path(tempdir(), paste0("cyl-", names(cyls), ".csv"))
+
+
+```
+

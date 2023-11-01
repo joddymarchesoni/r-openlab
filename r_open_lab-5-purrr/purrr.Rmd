@@ -1,0 +1,339 @@
+---
+title: 'R Open Lab 5: functional programming with purrr'
+author: "Joddy"
+date: "2023-10-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+purrr is the tidyverse package for applying functions iteratively to your data. They do the same job as a for() loop, but are much more readable and easier to maintain. You may also be familiar with the apply() family of functions in base R -- purrr is a more consistent and straightforward way to apply your functions.
+
+Today, we will review vectors, lists, and functions in R before jumping into the map family of functions. We will then look at an example application on the gapminder dataset, and explore how to use walk2() to automate writing out datasets to csv files.
+
+## Illustrations
+
+The Advanced R book (https://adv-r.hadley.nz/functionals.html) has some helpful illustrations of how the purr functions work. I will walk through these as we go, using this slide deck: https://docs.google.com/presentation/d/1o97Va_b-LcCDFt1DIwOmJSMuMwnXRquI0Yf8_M12k-0/edit?usp=sharing
+
+## Review
+
+To use purrr effectively, it is important to first understand how vectors, lists, and functions work in R.
+
+### Vectors
+
+A vector is a data type that holds a series of values. Vectors can be character (contain text values), or numeric (values that are numbers). For numeric vectors, we have integer (negative or positive round numbers) and double (floating-point decimal numbers). You can also have a logical vector of TRUE/FALSE values. Here are some examples:
+
+```{r}
+# Character vector
+v_char <- c("this", "is", "a", "character", "vector")
+
+# Numeric vectors
+v_int <- c(1, 2, 3, 4) # integer vector
+v_dbl <- runif(4) # double vector
+
+# Logical vectors
+v_lgl <- c(TRUE, TRUE, FALSE, TRUE)
+```
+
+The map_...() functions can take a vector as the first argument, that is the data to be transformed with a function. Then, the output from the map_...() functions can be character, integer, double, or logical: map_chr(), map_int(), map_dbl(), map_lgl().
+
+### Lists and data frames
+
+A list in R is a generic data type that can hold many objects at a time in a single object. Each element is often a name-value pair (like my_number = 5), but can be a vector, a data frame or even a list. It is a very flexible data type, and is the default output for map().
+
+A data frame is designed to hold tabular data, with rows and columns. Each column is a vector, with a value for each row. All of the vectors have to be the same length.
+
+```{r}
+# List
+my_first_list <- list(my_number = 5,
+                      my_vector = c("a", "b", "c"),
+                      my_dataframe = data.frame(a = 1:3, b = c("q", "b", "z"), c = c("bananas", "are", "so very great")))
+my_first_list
+
+# Data frame
+mtcars
+str(mtcars)
+```
+
+### Functions
+
+A function is a reusable piece of code. It takes arguments when called (what you put in the parentheses), and returns a value. In R, functions can be written in your script and directly saved to a variable. Then, you can call the function using the variable name, followed by parentheses containing the arguments. If you assign the result of a function call to a variable, the return value will be saved into it.
+
+The following example, addTen(), takes a number and adds 10 to it, then returns the result.
+
+```{r}
+# Syntax for declaring a function
+addTen <- function(.x) {
+  return(.x + 10)
+}
+
+result <- addTen(1)
+result
+```
+
+We will see "anonymous functions" while writing code with purrr. An anonymous function is written directly into map() as an argument, without being saved to a variable first. For example:
+
+```{r}
+map_df(c(1, 4, 7), function(.x) {
+  return(data.frame(old_number = .x, 
+                    new_number = addTen(.x)))
+})
+```
+
+We will go over map() in more detail in the next section.
+
+## map_...()
+
+The map_...() family of functions contains the basic function, map(), which returns a list, and several variants that return other data types. I'll use map_...() to refer to the family of functions, and map() to refer specifically to the map() function. The syntax is the same for all of them, with the naming convention having the output type as a suffix.
+
+- map(.x, .f) is the main mapping function and returns a list
+- map_df(.x, .f) returns a data frame
+- map_dbl(.x, .f) returns a numeric (double) vector
+- map_chr(.x, .f) returns a character vector
+- map_lgl(.x, .f) returns a logical vector
+
+The first argument, .x, is the data object that you want to map over. The second argument, .f, is the function you want to iteratively apply to each element of the data object. Optionally, you can pass arguments to .f (the function) by adding them as arguments after .f.
+
+The data object .x can be a vector, a list, or a data frame.
+
+Since the first argument is always a data object, map_...() functions work well with the pipe (%>% or |>). This enables you to string together map with other tidyverse functions.
+
+### Plain map()
+
+Here is an example of map:
+
+```{r}
+addTen <- function(.x) {
+  return(.x + 10)
+}
+
+library(tidyverse)
+map(.x = c(1, 4, 7), 
+    .f = addTen)
+```
+
+### map_int()
+
+map() works fine, but it only gives us a list. If we want the output to be an integer vector, we can use map_int():
+
+```{r}
+result_int <- map_int(.x = c(1, 4, 7), .f = addTen)
+result_int
+```
+
+This is much easier to work with than the list.
+
+We don't have to specify the arguments to map_...() functions every time. We could have written the above code as:
+
+```{r}
+result_int <- map_int(c(1, 4, 7), addTen)
+result_int
+```
+
+
+### map_dbl()
+
+Let's say we want to allow for continuous numbers to be valid input. Then let's see what our map does:
+
+```{r}
+result_dbl <- map_int(.x = c(1.002, 4.2334, 7.2), .f = addTen)
+result_dbl
+```
+
+We get an error, since the output is in double rather than integer format. purrr enforces data type integrity. Instead, we need map_dbl():
+
+```{r}
+result_dbl <- map_dbl(.x = c(1.002, 4.2334, 7.2), .f = addTen)
+result_dbl
+```
+
+Now we are able to accept numbers with decimal places. Notice that to change the output type, all we had to do was switch map_int() to map_dbl(). All of the arguments are the same. This fact makes the map() functions very convenient to use, especially compared to apply() functions in base R.
+
+### map_lgl()
+
+What can we do with the logical output? Let's say we want to see if our output is positive after adding 10:
+
+```{r}
+posNow <- function(.x) {
+  return(addTen(.x) >= 0)
+}
+result_lgl <- map_lgl(.x = c(-100.002, 4.2334, -7.2), .f = posNow)
+result_lgl
+```
+
+map_lgl() is very useful for testing a specific condition on every value in a vector.
+
+We can also use it to select a specific type of column from a data frame. For example:
+
+```{r}
+iris_numeric <- map_lgl(iris, is.numeric)
+map_dbl(iris[iris_numeric], mean, na.rm = TRUE)
+```
+
+### Anonymous functions
+
+If we don't need to reuse our posNow function defined before, we can declare the function directly in the .f argument. This is known as an anonymous function. There are a few different ways to declare anonymous functions in R.
+
+- The first is to copy the entire function into the .f= argument.
+- If the function fits on one line, it is often more convenient to leave out the brackets for readability.
+- You will sometimes see the "tilde-dot" shorthand for functions, where the function(.x) part is replace with a "~", and the function is enclosed in parentheses or brackets.
+
+```{r}
+# Using the standard function notation. The brackets help us know which part is the function code.
+result_lgl_anon <- map_lgl(.x = c(-100.002, 4.2334, -7.2), .f = function(.x) {
+  return(addTen(.x) >= 0)
+})
+result_lgl_anon
+
+# Shortcut: leave out the brackets so we can fit the map on one line
+result_lgl_anon <- map_lgl(c(-100.002, 4.2334, -7.2), function(.x) addTen(.x) >= 0)
+result_lgl_anon
+
+# Tilde-dot shorthand
+result_lgl_anon <- map_lgl(c(-100.002, 4.2334, -7.2), ~{addTen(.x) >= 0})
+result_lgl_anon
+```
+
+You will see all of these variants while reading documentation and finding code online, so it's helpful to be aware of them.
+
+## Gapminder example
+
+Let's take a look at using the map_...() functions with real-world datasets with gapminder. First, download the data:
+
+```{r}
+# to download the data directly:
+gapminder_orig <- read.csv("https://raw.githubusercontent.com/resbaz/r-novice-gapminder-files/master/data/gapminder-FiveYearData.csv")
+# define a copy of the original dataset that we will clean and play with 
+gapminder <- gapminder_orig
+```
+
+```{r}
+str(gapminder)
+head(gapminder)
+```
+
+Since gapminder is a data frame, the map_...() functions will iterate over each column. We can use it to summarize each of the columns in our dataset using the class() function. class() will tell us what datatype each column is. Since class returns character data, we need map_chr():
+
+```{r}
+gapminder %>% map_chr(class)
+```
+
+Since we are working with a data frame in tidyverse, we can use the pipe and omit the first argument! This makes our code concise, easy to read, and consistent with other tidyverse packages like dplyr.
+
+Next, let's see how many unique values we have in each column. We will use n_distinct() as our function.
+
+```{r}
+# apply the n_distinct() function to each column
+gapminder %>% map_dbl(n_distinct)
+```
+
+For a more complex summary, we can combine these operations by using map_df(). map_df() will return a data frame, so we can put each summary into a column. Notice that you will have to include the .x argument to each of the functions now.
+
+```{r}
+gapminder %>% map_df( function(.x) (data.frame(n_distinct = n_distinct(.x),
+                                  class = class(.x))))
+```
+
+Notice that we lost the column names in this report, since they were not included in our data frame. To add them, we will do the following:
+
+```{r}
+gapminder %>% map_df(function(.x) (data.frame(n_distinct = n_distinct(.x),
+  class = class(.x))),
+  .id = "variable")
+```
+
+map_df() allows us to create flexible reports on our data without having to write a loop or manually build a data frame.
+
+## map2()
+
+What if we have more than one data object, and we need our function to iterate over both at once? In that case, we can use map2(). The first two arguments are the two objects to iterate over, and the third is the function (with arguments for the two objects). We can pass arguments to the function after .f as usual.
+
+Here's how this function works, using an imaginary plotting function:
+
+map2(.x = object1, # the first object to iterate over
+     .y = object2, # the second object to iterate over
+     .f = plotFunction(.x, .y))
+
+Let's take a look at a weighted mean example. If we want to find the weighted mean for a list of vectors, we need to pair the data with a list of weights.
+
+```{r}
+# xs is a list of uniformly distributed sets of data
+xs <- map(1:8, ~ runif(10))
+xs[[1]][[1]] <- NA
+# ws is the weight for each row of data across the data list
+ws <- map(1:8, ~ rpois(10, 5) + 1)
+
+# Compute unweighed means
+map_dbl(xs, mean)
+```
+
+```{r}
+# Try to pass the weights to map_dbl()
+map_dbl(xs, weighted.mean, w = ws)
+```
+
+Let's try this with map2(), which allows us to specify both lists.
+
+```{r}
+map2_dbl(xs, ws, weighted.mean)
+```
+
+If we need to pass arguments to map2(), we add them after the function as before.
+
+```{r}
+map2_dbl(xs, ws, weighted.mean, na.rm = TRUE)
+```
+
+## walk()
+
+So far we have used map() to return various types of data, lists, vectors, etc. Sometimes, we don't need or care about the output, but simply want to perform an operation using the data in each row of our object. One example of this is writing out datasets with write_csv(), or automated plotting. With the map_...() functions, we have to assign the output to a throw-away variable to keep it from printing to the console. This works, but is inefficient and makes the code harder to read.
+
+The solution to this is the walk_...() family of functions. Base R does not have this capability, so if you need this functionality, it will be worth learning purrr.
+
+```{r}
+welcome <- function(x) {
+  cat("Welcome ", x, "!\n", sep = "")
+}
+names <- c("Hadley", "Jenny", "Joddy", "Rebecca")
+
+# As well as generate the welcomes, it also shows 
+# the return value of cat()
+map(names, welcome)
+
+# Using walk() instead
+walk(names, welcome)
+```
+
+## walk2()
+
+This variant of walk() is very useful, because it is a natural fit for saving objects to disk (you always have the object, and the path to save the object to). walk2() input is just like map2(), with 2 paired objects, a function, and optional arguments to pass. Let's take a look at an example:
+
+```{r}
+# Split mtcars up by cyl (cylinder) to get 3 data frames
+cyls <- split(mtcars, mtcars$cyl)
+
+# Create paths using our current directory and the cyl levels to name the files
+paths <- file.path(getwd(), paste0("cyl-", names(cyls), ".csv"))
+
+# Write the 3 csv files out to our current directory
+walk2(cyls, paths, write.csv)
+```
+
+## Closing
+
+Now you know how to use map to apply functions over your lists, vectors, and data frames! There's a lot more to purrr, including mapping with more than 2 objects, reduce() for summarizing your data dynamically, and more. These tools can be used to automate much of the work of data analysis, as we will see in the exercises.
+
+## Resources
+- This workshop is based on Rebecca Barter's tutorial at: https://jennybc.github.io/purrr-tutorial/
+- purrr cheatsheet: https://github.com/rstudio/cheatsheets/raw/master/purrr.pdf
+- Another accessible resource is Jenny Bryan's tutorial: https://jennybc.github.io/purrr-tutorial/
+- R for Data Science chapter on purrr: https://r4ds.hadley.nz/iteration.html
+  - useful for learning how to iterate over files and automate writing data out to files
+- Advanced R book chapter on purrr: https://adv-r.hadley.nz/functionals.html
+  - More in-depth about functional programming techniques in R
+
+### Eval: Please take a few minutes to fill out the workshop eval before you leave: https://go.ncsu.edu/dvs-eval
