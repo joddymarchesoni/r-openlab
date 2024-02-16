@@ -1,0 +1,203 @@
+---
+title: "Solutions"
+author: "Joddy"
+date: "2024-02-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Solutions to exercises
+
+## Load our flights data
+```{r}
+library(nycflights13)
+library(tidyverse)
+# Look at the data dictionary for flights dataset
+?flights
+
+# Save the flight data into the environment
+flights <- flights
+
+flights <- flights |> 
+  mutate(
+    gain = dep_delay - arr_delay,
+    speed = distance / air_time * 60
+  )
+```
+
+## Piping
+
+In a single pipeline for each condition, find all flights that meet the condition:
+
+
+### 1. Had an arrival delay of two or more hours
+```{r}
+flights |>
+  filter(arr_delay >= 120)
+```
+
+### 2. Flew to Houston (IAH or HOU)
+```{r}
+flights |>
+  filter(dest %in% c("IAH", "HOU"))
+```
+
+### 3. Were operated by United, American, or Delta
+```{r}
+flights |> filter(carrier == "UA" | carrier == "AA" | carrier == "DL")
+flights |> filter(carrier %in% c("UA", "AA", "DL"))
+```
+
+### 4. Departed in summer (July, August, and September)
+```{r}
+flights |>
+  filter(month %in% c(7,8,9))
+```
+
+### 5. Arrived more than two hours late, but didn’t leave late
+```{r}
+flights |>
+  filter(arr_delay > 120 & dep_delay <= 0)
+```
+
+### 6. Were delayed by at least an hour, but made up over 30 minutes in flight
+```{r}
+flights |>
+  filter(dep_delay >= 60 & gain > 30 )
+```
+
+What are some other interesting ways we could filter the flight data? How would you build the filter conditions for that?
+
+Please share your ideas with the group!
+
+## Selection
+
+### 1. What happens if you specify the name of the same variable multiple times in a select() call?
+```{r}
+flights |>
+  select(dep_delay, year, month, day, dep_delay)
+```
+
+The variable only shows up once.
+
+### 2. Does the result of running the following code surprise you? How do the select helpers deal with upper and lower case by default? How can you change that default?
+```{r}
+flights |> select(contains("TIME"))
+
+# The select is not case sensitive by default.
+
+# Add ignore.case=FALSE argument to contains.
+
+flights |> select(contains("TIME", ignore.case=FALSE))
+```
+
+### 3. Why doesn’t the following work, and what does the error mean?
+```{r}
+flights |> 
+  select(tailnum, arr_delay) |> 
+  arrange(arr_delay) |>
+  select(tailnum)
+```
+
+Output is:
+  Error in `arrange()`:
+  In argument: `..1 = arr_delay`.
+  Caused by error:
+  ! object 'arr_delay' not found
+ 
+The arr_delay is not selected, only tailnum, so we can't sort by it because it isn't in the data frame.
+
+## Grouping
+
+### 1. Which carrier has the worst average delays?
+
+### 2. Challenge: can you disentangle the effects of bad airports vs. bad carriers? Why/why not? (Hint: think about flights |> group_by(carrier, dest) |> summarize(n()))
+
+```{r}
+flights |> group_by(carrier,dest) |> 
+  summarize(
+    delay = mean(arr_delay, na.rm=TRUE),
+    n(),
+    .groups="keep"
+  )
+```
+
+Suppose we have the following tiny data frame:
+  
+```{r}
+  df <- tibble(
+    x = 1:5,
+    y = c("a", "b", "a", "a", "b"),
+    z = c("K", "K", "L", "L", "K")
+  )
+```
+
+### 1. Write down what you think the output will look like, then check if you were correct, and describe what group_by() does.
+```{r}
+df |>
+  group_by(y) |> summarize(n = n())
+```
+
+Creates a group for a and b, the two values in the y variable. There are 3 a's and 2 b's, so we get n=3 for a and n=2 for b.
+
+### 2. Write down what you think the output will look like, then check if you were correct, and describe what arrange() does. Also comment on how it’s different from the group_by() in part (a)?
+```{r}
+  df |>
+  arrange(y)
+```
+  
+The result will be sorted by the values of y, with a first and b second. All of the rows will be present.
+
+### 3. Write down what you think the output will look like, then check if you were correct, and describe what the pipeline does.
+
+```{r}
+df |>
+  group_by(y) |>
+  summarize(mean_x = mean(x))
+```
+
+The mean(x) gives us the mean for the a group, and for the b group. The pipeline first sets up the groups of y (a and b), and then the summarize runs on the grouped tibble.
+
+### 4. Write down what you think the output will look like, then check if you were correct, and describe what the pipeline does. Then, comment on what the message says.
+```{r}
+df |>
+  group_by(y, z) |>
+  summarize(mean_x = mean(x))
+```
+
+We are summarizing, so the z grouping will get dropped. We get a group for each level of y with a different level of z, so a, K and a,L, then for b both values have K for z, so they will stay grouped together.
+
+### 5. Write down what you think the output will look like, then check if you were correct, and describe what the pipeline does.
+How is the output different from the one in part (d).
+```{r}
+df |>
+  group_by(y, z) |>
+  summarize(mean_x = mean(x), .groups = "drop")
+```
+
+This is the default, so we get the same output, but without the message saying the z group was dropped.
+
+### 6. Write down what you think the outputs will look like, then check if you were correct, and describe what each pipeline does.
+How are the outputs of the two pipelines different?
+```{r}  
+  df |>
+  group_by(y, z) |>
+  summarize(mean_x = mean(x))
+```
+  
+For this one, we get the 3 groups described in 4. We are using summarize to get the mean of x, so it will operate on the groups we created.
+
+```{r}
+df |>
+  group_by(y, z) |>
+  mutate(mean_x = mean(x))
+```
+
+Mutate will take the mean on the unique combinations of y and z. So there will be one mean for row 1 (a and K), one for rows 2 and 5 (b and K), and one for 3 and 4 (a and L). The mean for the "b and K" rows and the "a and L" rows are calculated differently:
+  - a and L: (3+4+/2)=3.5
+  - b an K: (2+5)/2=3.5
+
+
