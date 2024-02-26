@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# R Open Lab 1: Reading, writing, and managing multiple datasets
+# R Open Lab 2: Reading, writing, and managing multiple datasets
 
 # Part 1: Importing and exporting data in R
 

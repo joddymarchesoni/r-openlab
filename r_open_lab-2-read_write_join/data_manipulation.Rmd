@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# R Open Lab 1: Reading, writing, and managing multiple datasets
+# R Open Lab 2: Reading, writing, and managing multiple datasets
 
 # Part 2: Data manipulation
 
@@ -26,6 +26,12 @@ dplyr allows multiple datasets to be "joined" (terminology from SQL):
   full_join()   Merge two datasets. Keeps all observations
 
   right_join()	Keep all observations from the destination table
+  
+## Join visualization 
+  
+For a visual explanation of joining data, we will go over https://go.ncsu.edu/dplyr-joins.
+
+I found these visual aids really helpful when I was learning SQL (and also R joins), so you can refer to them in the future as you're learning.
 
 ## Load tidyverse package for data manipulation
 ```{r}
@@ -92,6 +98,52 @@ df_secondary_m <- tribble(
   "C", 2017,13)
 left_join(df_primary_m, df_secondary_m, by = c('ID', 'year'))
 ```
+
+## NYC flights example
+
+```{r}
+# Load the datasets
+library(nycflights13)
+```
+
+
+The NYC flights data (nycflights13 package) has several related datasets to join:
+
+* airlines records two pieces of data about each airline: its carrier code and its full name. You can identify an airline with its two letter carrier code, making carrier the primary key.
+
+```{r}
+airlines
+```
+
+* airports records data about each airport. You can identify each airport by its three letter airport code, making faa the primary key.
+
+```{r}
+airports
+```
+
+* planes records data about each plane. You can identify a plane by its tail number, making tailnum the primary key.
+
+```{r}
+planes
+```
+
+* weather records data about the weather at the origin airports. You can identify each observation by the combination of location and time, making origin and time_hour the compound primary key.
+
+```{r}
+weather
+```
+
+### Foreign keys
+A foreign key is a variable (or set of variables) that corresponds to a primary key in another table. For example:
+
+flights$tailnum is a foreign key that corresponds to the primary key planes$tailnum.
+flights$carrier is a foreign key that corresponds to the primary key airlines$carrier.
+flights$origin is a foreign key that corresponds to the primary key airports$faa.
+flights$dest is a foreign key that corresponds to the primary key airports$faa.
+
+## Exploring the relationships in flights data
+
+We will come back to these for our exercises to learn how to use joins to explore relationships between the datasets.
 
 ## World Bank population example
 

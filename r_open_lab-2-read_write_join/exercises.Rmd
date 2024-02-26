@@ -1,0 +1,124 @@
+---
+title: "Exercises"
+author: "Joddy"
+date: "2024-02-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Data import/export
+
+```{r}
+library(haven)
+library(readr)
+library(readxl)
+
+library(writexl)
+```
+
+### 1. Set your working directory to the "data" folder in the R Open Lab project, and then test that it worked with setwd().
+
+```{r}
+
+```
+
+### 2. Importing an SPSS file
+
+Import the behavior.sav file into a data frame.
+
+```{r}
+
+```
+
+### 3. Export the first 10 rows of behavior to an RDS object.
+
+```{r}
+
+```
+
+### 4. Load the behavior object back in to R.
+
+```{r}
+
+```
+
+### Now try importing a few datasets from the data folder, and then export them to different formats (csv, excel, SPSS, SAS formats).
+
+```{r}
+
+```
+
+
+### Importing the example datasets
+
+```{r}
+# Load tidyverse and the data packages
+library(tidyverse)
+library(nycflights13)
+
+```
+
+### Data manipulation: exploring the NYC flights datasets
+
+Using the primary and foreign keys we defined in the lesson, perform the following joins:
+
+#### 1. Left join on flights and planes
+
+```{r}
+
+```
+
+#### 2. Right join on planes and flights
+
+```{r}
+
+```
+
+#### 3. Inner join on weather and flights (compound keys)
+
+```{r}
+
+```
+
+#### 4. Full join on airlines and flights
+
+```{r}
+
+```
+
+#### 5. Anti-join on flights and airlines
+
+```{r}
+
+```
+
+#### 6. Anti-joins can help us detect keys that are missing. What do we take away from the result of the anti-join above?
+
+
+#### 7. What can we do now that we have joined these datasets together? Give some examples of relationships we can now explore. For example, after joining weather and flights, we can now consider the effect of wind speed on arr_delay.
+
+### Challenges
+
+#### 1. We forgot to draw the relationship between weather and airports in Figure 19.1. What is the relationship and how should it appear in the diagram?
+
+
+#### 2. weather only contains information for the three origin airports in NYC. If it contained weather records for all airports in the USA, what additional connection would it make to flights?
+
+
+#### 3. The year, month, day, hour, and origin variables almost form a compound key for weather, but there’s one hour that has duplicate observations. Can you figure out what’s special about that hour?
+
+
+#### 4. We know that some days of the year are special and fewer people than usual fly on them (e.g., Christmas eve and Christmas day). How might you represent that data as a data frame? What would be the primary key? How would it connect to the existing data frames?
+
+
+#### 5. Draw a diagram illustrating the connections between the Batting, People, and Salaries data frames in the Lahman package. Draw another diagram that shows the relationship between People, Managers, AwardsManagers. How would you characterize the relationship between the Batting, Pitching, and Fielding data frames?
+
+```{r}
+library(Lahman)
+```
+
+
+

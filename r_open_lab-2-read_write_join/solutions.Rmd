@@ -1,0 +1,148 @@
+---
+title: "Solutions"
+author: "Joddy"
+date: "2024-02-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Solutions to exercises
+
+## Data import/export
+
+```{r}
+library(haven)
+library(readr)
+library(readxl)
+
+library(writexl)
+```
+
+### 1. Set your working directory to the "data" folder in the R Open Lab project, and then test that it worked with setwd().
+
+```{r}
+setwd("~/R/r-openlab/r_open_lab-2-read_write_join/data")
+
+getwd()
+```
+
+### 2. Importing an SPSS file
+
+Import the behavior.sav file into a data frame.
+
+```{r}
+behavior <- read_sav("data/behavior.sav")
+```
+
+### 3. Export the first 10 rows of behavior to an RDS object.
+
+```{r}
+saveRDS(behavior[1:10,], "data/behavior1_10.rds")
+```
+
+### 4. Load the behavior object back in to R.
+
+```{r}
+behavior1_10 <- readRDS("data/behavior1_10.rds")
+```
+
+### Now try importing a few datasets from the data folder, and then export them to different formats (csv, excel, SPSS, SAS formats).
+
+```{r}
+
+```
+
+
+### Importing the example datasets
+
+```{r}
+# Load tidyverse and the data packages
+library(tidyverse)
+library(nycflights13)
+
+```
+
+### Data manipulation: exploring the NYC flights datasets
+
+Using the primary and foreign keys we defined in the lesson, perform the following joins:
+
+#### 1. Left join on flights and planes
+
+```{r}
+flights |>
+  left_join(planes, by="tailnum")
+```
+
+#### 2. Right join on planes and flights
+
+```{r}
+  right_join(flights, planes, by="tailnum")
+```
+
+#### 3. Inner join on weather and flights (compound keys)
+
+```{r}
+inner_join(flights, weather, by=c("origin", "time_hour"))
+```
+
+#### 4. Full join on airlines and flights
+
+```{r}
+full_join(airlines, flights, by="carrier")
+```
+
+#### 5. Anti-join on flights and airlines
+
+```{r}
+anti_join(flights, airlines, by="carrier")
+```
+
+#### 6. Anti-joins can help us detect keys that are missing. What do we take away from the result of the anti-join above?
+
+Having 0 rows in an anti-join means that all the keys are present in both datasets. This means that we can safely join the tables without issues stemming from keys missing in either dataset, which result in NA values for some rows.
+
+#### 7. What can we do now that we have joined these datasets together? Give some examples of relationships we can now explore. For example, after joining weather and flights, we can now consider the effect of wind speed on arr_delay.
+
+### Challenges
+
+#### 1. We forgot to draw the relationship between weather and airports in Figure 19.1. What is the relationship and how should it appear in the diagram?
+
+The column airports$faa is a foreign key of weather$origin. The following drawing updates the one in Section 13.2 to include this relation. The line representing the new relation between weather and airports is colored black.
+
+The lines representing the old relations are gray and thinner.
+
+#### 2. weather only contains information for the three origin airports in NYC. If it contained weather records for all airports in the USA, what additional connection would it make to flights?
+
+If the weather was included for all airports in the US, then it would provide the weather for the destination of  each flight. The weather data frame columns (year, month, day, hour, origin) are a foreign key for the flights    data frame columns (year, month, day, hour, dest). This would provide information about the weather at the       destination airport at the time of the flight take off, unless the arrival date-time were calculated.
+
+#### 3. The year, month, day, hour, and origin variables almost form a compound key for weather, but there’s one hour that has duplicate observations. Can you figure out what’s special about that hour?
+
+So why was this not a relationship prior to adding additional rows to the weather table? In a foreign key relationship, the collection of columns in the child table must refer to a unique collection of columns in the parent table. When the weather table only contained New York airports, there were many values of (year, month, day, hour, dest) in flights that did not appear in the weather table. Therefore, it was not a foreign key. It was only after all combinations of year, month, day, hour, and airports that are defined in flights were added to the weather table that there existed this relation between these tables.
+
+#### 4. We know that some days of the year are special and fewer people than usual fly on them (e.g., Christmas eve and Christmas day). How might you represent that data as a data frame? What would be the primary key? How would it connect to the existing data frames?
+
+I would add a table of special dates, similar to the following table.
+
+```{r}
+special_days <- tribble(
+  ~year, ~month, ~day, ~holiday,
+  2013, 01, 01, "New Years Day",
+  2013, 07, 04, "Independence Day",
+  2013, 11, 29, "Thanksgiving Day",
+  2013, 12, 25, "Christmas Day"
+)
+```
+
+The primary key of the table would be the (year, month, day) columns. The (year, month, day) columns could be used to join special_days with other tables.
+
+#### 5. Draw a diagram illustrating the connections between the Batting, People, and Salaries data frames in the Lahman package. Draw another diagram that shows the relationship between People, Managers, AwardsManagers. How would you characterize the relationship between the Batting, Pitching, and Fielding data frames?
+
+```{r}
+library(Lahman)
+```
+
+
+

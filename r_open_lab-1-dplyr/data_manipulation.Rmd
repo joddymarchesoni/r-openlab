@@ -2,14 +2,16 @@
 title: "Data Manipulation with dplyr"
 author: "Joddy"
 date: "2024-02-16"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# R Open Lab 2 - data manipulation with dplyr
+# R Open Lab 1 - data manipulation with dplyr
 
 Today we will focus on using dplyr to manipulate data. Rather than focus on data cleaning tasks, today we'll talk about how to select rows and columns from your data, how to derive new variables from your existing ones, use groups with summarize() and the slice functions to answer questions about your dataset.
 
@@ -19,7 +21,7 @@ I highly recommend that book as a guide for teaching yourself data science. It c
 
 ```{r}
 # Get the data we will be working with today
-install.packages("nycflights13")
+# install.packages("nycflights13")
 ```
 
 Load our dataset, flights that departed from NYC
@@ -355,7 +357,7 @@ flights |>
   group_by(month) |> 
   summarize(
     delay = mean(dep_delay, na.rm = TRUE), 
-    n = n()
+    count = n()
   )
 ```
 
