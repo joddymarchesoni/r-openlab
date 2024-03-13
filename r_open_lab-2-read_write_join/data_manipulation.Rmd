@@ -66,6 +66,8 @@ full_join(df_primary, df_secondary, by = 'ID')
 
 # Right join
 right_join(df_primary, df_secondary, by = 'ID')
+
+left_join(df_secondary, df_primary, by="ID")
 ```
 
 How could we rewrite the right join as a left join?
@@ -131,6 +133,9 @@ planes
 
 ```{r}
 weather
+```
+```{r}
+flights
 ```
 
 ### Foreign keys
@@ -236,7 +241,7 @@ left_tfrt_2010
 
 ```{r}
 # anti_join(x, y) returns observations of x with no match in y
-anti_join(pop, tfrt, by = c("country", "date"))
+count(anti_join(pop, tfrt, by = c("country", "date")))
 ```
 
 In this case, we get the rows with population values but no fertility values
@@ -282,3 +287,5 @@ Each row in pop matched all 22 rows in tfrt.
 - https://jmsallan.netlify.app/blog/joining-relational-tables-in-dplyr/
 - https://r4ds.hadley.nz/joins.html
 - https://dplyr.tidyverse.org/reference/mutate-joins.html
+
+go.ncsu.edu/dvs-eval

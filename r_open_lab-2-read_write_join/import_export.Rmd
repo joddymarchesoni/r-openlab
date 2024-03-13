@@ -2,7 +2,10 @@
 title: "Importing and exporting data in R"
 author: "Joddy"
 date: "2024-02-14"
-output: html_document
+output:
+  html_document:
+    toc: true # look this up for Ming tomorrow (3/12)
+    # BTM topic model (Latex)
 ---
 
 ```{r setup, include=FALSE}

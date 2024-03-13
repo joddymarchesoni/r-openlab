@@ -49,6 +49,9 @@ packages <- c(
 install.packages("remotes")
 install.packages(packages)
 remotes::install_github("hrbrmstr/hrbrthemes")
+```
+
+```{r}
 # Load standard packages
 library(ggplot2)
 ```
@@ -295,9 +298,12 @@ ggplot(mtcars, aes(x = disp, y = mpg)) +
 
 ### Looks
 Many people have already designed beautiful (and horrible) themes for you. Use
-them as a base
+them as a base.
 
-```{r}
+### Fonts and other resources
+Note that you may need to install missing fonts and other theme resources. In the following example, my system is lacking the "Roboto" set of fonts. I had to add the font using showtext.
+
+```{r warning=FALSE}
 p <- ggplot(mtcars, aes(mpg, wt)) +
   geom_point(aes(color = factor(carb))) +
   labs(
@@ -308,13 +314,20 @@ p <- ggplot(mtcars, aes(mpg, wt)) +
     caption = 'Source: It’s mtcars — everyone uses it'
   )
 
-
-
 library(hrbrthemes)
 
-# p + theme_modern_rc()
+# Run this if you don't have showtext installed
+# install.packages("showtext")
+library(showtext)
+
+# Add the Roboto font
+font_add_google("Roboto Condensed", family="Roboto")
+font_add_google("Roboto", family="Roboto")
+showtext_auto()
+
+p + theme_modern_rc()
 # p + theme_economist()
-p + theme_fivethirtyeight()
+# p + theme_fivethirtyeight()
 
 p + 
    scale_colour_ipsum() + 
@@ -326,68 +339,6 @@ library(ggthemes)
 p + 
   scale_colour_excel() + 
   theme_excel()
-```
-
-## Drawing anything
-
-```{r}
-states <- c(
-  'eaten', "eaten but said you didn\'t", 'cat took it', 'for tonight',
-  'will decompose slowly'
-)
-pie <- data.frame(
-  state = factor(states, levels = states),
-  amount = c(4, 3, 1, 1.5, 6),
-  stringsAsFactors = FALSE
-)
-ggplot(pie) + 
-  geom_col(aes(x = 0, y = amount, fill = state))
-```
-
-```{r}
-ggplot(pie) + 
-  geom_col(aes(x = 0, y = amount, fill = state)) + 
-  coord_polar(theta = 'y')
-```
-
-```{r}
-ggplot(pie) + 
-  geom_col(aes(x = 0, y = amount, fill = state)) + 
-  coord_polar(theta = 'y') + 
-  scale_fill_tableau(name = NULL,
-                     guide = guide_legend(ncol = 2)) + 
-  theme_void() + 
-  theme(legend.position = 'top', 
-        legend.justification = 'left')
-```
-
-```{r}
-ggplot(pie) + 
-  geom_arc_bar(aes(x0 = 0, y0 = 0, r0 = 0, r = 1, amount = amount, fill = state), stat = 'pie') + 
-  coord_fixed()
-```
-
-```{r}
-ggplot(pie) + 
-  geom_arc_bar(aes(x0 = 0, y0 = 0, r0 = 0, r = 1, amount = amount, fill = state), stat = 'pie') + 
-  coord_fixed() + 
-  scale_fill_tableau(name = NULL,
-                     guide = guide_legend(ncol = 2)) + 
-  theme_void() + 
-  theme(legend.position = 'top', 
-        legend.justification = 'left')
-```
-
-```{r}
-ggplot(mpg) + 
-  # geom_bar(aes(x = hwy), stat = 'bin')
-  geom_histogram(aes(x = hwy))
-```
-
-```{r}
-ggplot(mpg) + 
-  geom_bar(aes(x = hwy)) + 
-  scale_x_binned(n.breaks = 30, guide = guide_axis(n.dodge = 2))
 ```
 
 ### Eval: Please take a few minutes to fill out the workshop eval before you leave: https://go.ncsu.edu/dvs-eval
