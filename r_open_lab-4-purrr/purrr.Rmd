@@ -1,5 +1,5 @@
 ---
-title: 'R Open Lab 5: functional programming with purrr'
+title: 'R Open Lab 4: functional programming with purrr'
 author: "Joddy"
 date: "2023-10-23"
 output: html_document

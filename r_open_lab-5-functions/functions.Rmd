@@ -1,0 +1,388 @@
+---
+title: "Writing reusable code with functions"
+author: "Joddy"
+date: "2024-03-13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Writing functions in R
+
+## Introduction
+Learning to write functions will really pay off as your data science becomes more complex. Functions let you automate your coding tasks and keep them organized, and help you write code that is easier to maintain (and that has fewer bugs and errors!).
+
+Here are some of the advantages of writing functions vs. copy/pasting code blocks:
+
+1. You can organize your tasks with memorable function names
+2. If you have to change the code, you only have to do so in one place (rather than editing each line of copy/pasted code)
+3. The chance of typos and other mistakes is eliminated (if you have to change a variable name, or alter any values for each line you paste)
+4. You can reuse functions from previous projects rather than rewriting it every time
+
+A good guideline is to consider writing a function if you copy something more than twice in your code. This follows the very helpful coding principle DRY (Don't Repeat Yourself). It is much more effective to write a function and call it wherever you need to do a task versus copy/pasting code each time you need to repeat a task.
+
+Today, you'll start out by learning what a function is in R, the syntax for creating and calling your functions, and we'll look at a motivating example of why it's worth learning to write custom functions. Then in the second half of the open lab, you'll work on exercises to practice understanding, creating, and improving functions.
+
+## What is a function?
+
+A function is an object in R that contains reusable code. Functions can be broken down into 3 components:
+
+1. Arguments (The variables you pass to the function)
+2. Body (The actual reusable code, that uses the arguments you supply)
+3. Environment (Where the function is in your R system, which determines how the function can be accessed and what resources it can use)
+
+### Functions are R objects
+
+Functions in R are just like other R objects like data frames, in that you assign a code block to a named variable, like this:
+```{r}
+f1 <- function(x) {
+  sin(1 / x ^ 2)
+}
+```
+
+f1 will be saved into your environment, and you can call it like this:
+
+```{r}
+f1(2)
+```
+
+In this example, the function takes a number, computes sin(1/x^2), and returns the result. We use the name of the function we created, followed by parentheses with any arguments inside.
+
+Note that there is a type of function, an anonymous function, that does not get assigned a name. You will see anonymous functions when using apply, for example:
+
+```{r}
+lapply(mtcars, function(x) length(unique(x)))
+```
+
+This is an example of passing a function as an argument to another function, just as you would pass any argument object. We passed the function "function(x) length(unique(x))" as the second argument to lapply().
+
+### Function arguments
+
+Functions have named arguments which may have default values. The format for named arguments are, for example:
+
+```{r}
+myfunction <- function(data, count = 0, count.rows = TRUE) {
+  if (!is.null(data) & count > 0) {
+    if (count.rows) {
+      dim(data)[1]
+    } else {
+      dim(data)[2]
+    }
+  }
+}
+
+# We don't need to name the first argument, using the position instead. We are using the name for count though
+myfunction(mtcars, count=length(mtcars)) # Gives us the rows
+# count.rows=FALSE overrides the default value for count.rows
+myfunction(mtcars, count=length(mtcars), count.rows=FALSE) # Gives us the columns
+```
+
+The arguments you declare when you use function() need to be supplied when the function is called, unless you define defaults. As you can see in the above example, the default value is provided if an argument is missing (count.rows was omitted in the first call). If a value is missing with no default, you will get an error.
+
+```{r}
+myfunction()
+```
+
+### Return values
+
+You can specify what to return as the result of calling a function using return(). If you don't specify what to return, R will return the result of the last expression executed. In the example above:
+
+* "myfunction(mtcars, count=length(mtcars))"
+  * returns the result of "dim(data)[1]" (32)
+* "myfunction(mtcars, count=length(mtcars), count.rows=FALSE)"
+  * returns the result of "dim(data)[2]" (11)
+  
+To be more specific about what we return, we could have written the function as:
+
+```{r}
+myfunction <- function(data, count = 0, count.rows = TRUE) {
+  if (!is.null(data) & count > 0) {
+    total = 0
+    if (count.rows) {
+      total = dim(data)[1]
+    } else {
+      total = dim(data)[2]
+    }
+    return(total)
+  }
+}
+
+# We get the same output if we specify what to return
+myfunction(mtcars, count=length(mtcars))
+myfunction(mtcars, count=length(mtcars), count.rows=FALSE)
+```
+
+## Lexical scoping
+
+In computer programming, scoping is the act of finding the value associated with a name. We name things in R by assigning them, and our R system already has many predefined names. This is how we can use the base functions like mean() or sum() without having to include any libraries first.
+
+You probably already have a good intuition about how scoping works in R. Consider this example function below. What do you think it will return (10 or 20)? Why?
+
+```{r}
+x <- 10
+g01 <- function() {
+  x <- 20
+  x
+}
+
+g01()
+```
+
+Up to now, most likely you haven't had to worry much about scoping, but it is really important to understand when you start writing your own functions.
+
+R uses "lexical scoping", which means that it looks up the values of named variables based on how a function is _defined_, not what it is _called_.
+
+There are 4 rules to remember:
+
+* Name masking
+* Functions versus variables
+* A fresh start
+* Dynamic lookup
+
+### Name masking
+
+Names defined inside a function mask (or override) names written outside the function. Here is an example:
+
+```{r}
+x <- 10
+y <- 20
+g02 <- function() {
+  x <- 1
+  y <- 2
+  c(x, y)
+}
+g02()
+```
+
+If a name isn't defined, R will look up one level (outside the function definition block to above code):
+
+```{r}
+x <- 2
+g03 <- function() {
+  y <- 1
+  c(x, y)
+}
+g03()
+
+# And this doesn't change the previous value of y that we defined in the previous example
+y
+```
+
+The same rules apply when a function is defined inside another function. R will look first inside the function, then the next one up, and so on.
+
+```{r}
+x <- 1
+g04 <- function() {
+  y <- 2
+  i <- function() {
+    z <- 3
+    c(x, y, z)
+  }
+  i()
+}
+g04()
+```
+
+### Functions versus variables
+In R, functions are just objects. So the scoping rule for masking also applies to function names.
+
+```{r}
+g07 <- function(x) x + 1
+g08 <- function() {
+  g07 <- function(x) x + 100 # This function is used in the next line
+  g07(10)
+}
+g08()
+```
+
+So the definition of g07 that we defined inside g08 is used when we call g08.
+
+When a function and non-function object share the same name, R will ignore the non-function objects when looking up that value. So in the following example, g09 is both a function and a non-function object:
+
+```{r}
+g09 <- function(x) x + 100
+g10 <- function() {
+  g09 <- 10
+  g09(g09)
+}
+g10()
+
+```
+
+R ignores the line "g09 <- 10" and uses the g09 function defined in the first line instead. It's generally bad practice to name functions and non-function objects the same thing, so avoid this in your code. It causes confusion and is unnecessary!
+
+### A fresh start
+What happens to values inside a function between function calls? Consider the example below. What happens the first time you run this? The second?
+
+Note that exists() will return TRUE if there's a variable with the name given, and FALSE if not.
+
+```{r}
+g11 <- function() {
+  if (!exists("a")) {
+    a <- 1
+  } else {
+    a <- a + 1
+  }
+  a
+}
+
+g11()
+g11()
+```
+
+We always get the same value! This is because a new environment is created each time we run a function. We might take this for granted when writing code, but it is very useful to have independent function calls. It makes functions more predictable, and reduces confusing output.
+
+### Dynamic lookup
+
+This means that R looks for values when the function is run, not when it is created. Here's an example:
+
+```{r}
+g12 <- function() x + 1
+x <- 15
+g12()
+#> [1] 16
+
+x <- 20
+g12()
+```
+
+This can produce some unexpected results! If we wanted to use the original value for x for the second call, R wouldn't give us an error message. It would find the current value of x in the environment and use that instead. 
+
+## Motivation for creating functions
+
+In the next example, we'll look at a workflow for writing a vector function for R tidyverse code. First we'll look at some copy/paste code, then start thinking about how to turn it into reusable code. Then we'll do some work to improve it, and you'll see how much easier it is to write better code when you use functions.
+
+### Vector example
+
+Let's take a look at the following code, and see what it does.
+
+```{r}
+library(tidyverse)
+
+df <- tibble(
+  a = rnorm(5),
+  b = rnorm(5),
+  c = rnorm(5),
+  d = rnorm(5),
+)
+
+df |> mutate(
+  a = (a - min(a, na.rm = TRUE)) / 
+    (max(a, na.rm = TRUE) - min(a, na.rm = TRUE)),
+  b = (b - min(b, na.rm = TRUE)) / 
+    (max(b, na.rm = TRUE) - min(a, na.rm = TRUE)),
+  c = (c - min(c, na.rm = TRUE)) / 
+    (max(c, na.rm = TRUE) - min(c, na.rm = TRUE)),
+  d = (d - min(d, na.rm = TRUE)) / 
+    (max(d, na.rm = TRUE) - min(d, na.rm = TRUE)),
+)
+```
+
+There's a subtle bug in this code, but it runs fine. If you take a look at the line starting with b = , you can see that we are taking the minimum of a rather than b. This is a copy/paste error, and it caused a difficult bug in our code!
+
+#### Turning our code into a function
+
+Let's think about how we could turn this repeated code into a function. The first step is to figure out which parts of the code are constant, and which parts vary.
+
+If you were copy/pasting the a = line, what would you have to change to make it work for a different variable? Let's pull the code out of the mutate() and look at each line:
+
+  (a - min(a, na.rm = TRUE)) / (max(a, na.rm = TRUE) - min(a, na.rm = TRUE))
+  (b - min(b, na.rm = TRUE)) / (max(b, na.rm = TRUE) - min(b, na.rm = TRUE))
+  (c - min(c, na.rm = TRUE)) / (max(c, na.rm = TRUE) - min(c, na.rm = TRUE))
+  (d - min(d, na.rm = TRUE)) / (max(d, na.rm = TRUE) - min(d, na.rm = TRUE))
+
+Let's replace the bit that varies for each line with █:
+
+  (█ - min(█, na.rm = TRUE)) / (max(█, na.rm = TRUE) - min(█, na.rm = TRUE))
+
+To turn this into a function, you need 3 things:
+
+1. Name (what to call the function)
+2. Arguments (what input to give the function, the bits that vary)
+3. Body (The actual code to run)
+
+#### Creating the function from a template
+
+We might make a template like:
+
+name <- function(arguments) {
+  body
+}
+
+And we can replace each item using our work from before:
+
+```{r}
+# Call it rescale01, since it rescales a vector to be between 0 and 1
+rescale01 <- function(x) {
+  # We'll replace our █ with x
+  (x - min(x, na.rm = TRUE)) / (max(x, na.rm = TRUE) - min(x, na.rm = TRUE))
+}
+```
+
+Now, let's test it out by calling it with a couple of vectors:
+
+```{r}
+rescale01(c(-10, 0, 10))
+rescale01(c(1, 2, 3, NA, 5))
+```
+
+#### Using the function in mutate()
+
+Then we can use our custom function in the mutate() call that we started with:
+
+```{r}
+df |> mutate(
+  a = rescale01(a),
+  b = rescale01(b),
+  c = rescale01(c),
+  d = rescale01(d),
+)
+```
+
+We've improved our solution to something that is clean and easy to fix or tinker with.
+
+#### Improving our function
+
+Now, let's consider an improvement. Since we have a reusable function now, we only have to make changes in one place: inside the function. Before we would have had to change all 4 mutate lines.
+
+Instead of using min() and max(), we can just use range() instead:
+
+```{r}
+rescale01 <- function(x) {
+  rng <- range(x, na.rm = TRUE, finite = TRUE) # finite = TRUE ignores infinite values in the rescale
+  (x - rng[1]) / (rng[2] - rng[1])
+}
+```
+
+Then we can run it on our data frame again to test it. Notice that this is the exact same code as we used before -- only the function internals have changed!
+```{r}
+df <- tibble(
+  a = rnorm(5),
+  b = rnorm(5),
+  c = rnorm(5),
+  d = rnorm(5),
+)
+
+df |> mutate(
+  a = rescale01(a),
+  b = rescale01(b),
+  c = rescale01(c),
+  d = rescale01(d),
+)
+```
+
+This is going to make maintaining this code much easier in the long run!
+
+Next, we will spend the rest of the session working on exercises to practice creating functions. Please let me know if you have any questions, and open exercises.Rmd to get started!
+
+```
+
+# Sources
+* The Art of R Programming (ch 7): https://catalog.lib.ncsu.edu/catalog/NCSU4203672
+* R for Data Science (ch 25): https://r4ds.hadley.nz/functions
+* Advanced R (ch 6): https://adv-r.hadley.nz/functions.html
+* Introduction to the R Language (Functions): https://www.stat.berkeley.edu/~statcur/Workshop2/Presentations/functions.pdf
+
+### Eval: Please take a few minutes to fill out the workshop eval before you leave: https://go.ncsu.edu/dvs-eval
