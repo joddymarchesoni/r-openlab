@@ -1,0 +1,108 @@
+---
+title: "exercises"
+author: "Joddy"
+date: "2024-03-13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Exercises
+
+## Function fundamentals
+
+### 1. It’s possible (although typically not useful) to call an anonymous function. Which of the two approaches below is correct? Why?
+
+function(x) 3()
+
+(function(x) 3)()
+
+### 2. A good rule of thumb is that an anonymous function should fit on one line and shouldn’t need to use {}. Review your code. Where could you have used an anonymous function instead of a named function? Where should you have used a named function instead of an anonymous function?
+
+
+### 3.
+
+#### a. What are the three important components of a function? How do we find them using code?
+
+
+#### b. Are there any exceptions to these components?
+
+
+#### c. Find the components of sd().
+
+```{r}
+
+```
+
+#### d. Find the components of length().
+
+```{r}
+
+```
+
+#### e. How can we determine whether a function is a primitive without relying on body(), formals(), and environment()? Hint: search the documentation for "primitive" or enter ?primitive in the console.
+
+
+#### f. Demonstrate the primitive function test with sd() and length().
+
+```{r}
+
+```
+
+## Lexical scoping
+
+### 1. What are the four principles that govern how R looks for values? Briefly describe each of them.
+
+
+### 2. What does the following code return? Why? Describe how each of the three c’s is interpreted.
+
+```{r}
+c <- 10
+c(c = c)
+```
+
+### 3. What does the following function return? Make a prediction before running the code yourself.
+
+```{r}
+f <- function(x) {
+  f <- function(x) {
+    f <- function() {
+      x ^ 2
+    }
+    f() + 1
+  }
+  f(x) * 2
+}
+f(10)
+```
+
+## Writing functions
+
+### 1. Write both_na(), a function that takes two vectors of the same length and returns the number of positions that have an NA in both vectors. Also include an example usage of it.
+
+```{r}
+both_na <- function() {
+  
+}
+
+both_na()
+```
+
+### 2. Write the logic for a greeting function that says “good morning”, “good afternoon”, or “good evening”, depending on the time of day. Make sure it provides correct results for the three cases included.
+
+```{r}
+greet <- function(time = lubridate::now()) {
+  hr <- lubridate::hour(time)
+  
+  # Write the function logic here
+}
+greet()
+
+greet(ymd_h("2024-01-08:05"))
+
+greet(ymd_h("2024-01-08:13"))
+
+greet(ymd_h("2024-01-08:20"))
+```

@@ -95,6 +95,7 @@ The map_...() family of functions contains the basic function, map(), which retu
 - map_dbl(.x, .f) returns a numeric (double) vector
 - map_chr(.x, .f) returns a character vector
 - map_lgl(.x, .f) returns a logical vector
+- map_int(.x, .f)
 
 The first argument, .x, is the data object that you want to map over. The second argument, .f, is the function you want to iteratively apply to each element of the data object. Optionally, you can pass arguments to .f (the function) by adding them as arguments after .f.
 
@@ -148,6 +149,9 @@ We get an error, since the output is in double rather than integer format. purrr
 
 ```{r}
 result_dbl <- map_dbl(.x = c(1.002, 4.2334, 7.2), .f = addTen)
+result_dbl
+
+result_dbl <- map_dbl(.x = c(1, 4, 7), .f = addTen)
 result_dbl
 ```
 
@@ -228,7 +232,7 @@ Next, let's see how many unique values we have in each column. We will use n_dis
 
 ```{r}
 # apply the n_distinct() function to each column
-gapminder %>% map_dbl(n_distinct)
+gapminder %>% map_int(n_distinct)
 ```
 
 For a more complex summary, we can combine these operations by using map_df(). map_df() will return a data frame, so we can put each summary into a column. Notice that you will have to include the .x argument to each of the functions now.
@@ -241,8 +245,8 @@ gapminder %>% map_df( function(.x) (data.frame(n_distinct = n_distinct(.x),
 Notice that we lost the column names in this report, since they were not included in our data frame. To add them, we will do the following:
 
 ```{r}
-gapminder %>% map_df(function(.x) (data.frame(n_distinct = n_distinct(.x),
-  class = class(.x))),
+gapminder %>% map_df(function(.x) {(data.frame(n_distinct = n_distinct(.x),
+  class = class(.x)))},
   .id = "variable")
 ```
 

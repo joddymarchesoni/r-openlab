@@ -11,4 +11,264 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Solutions to exercises
 
+## Function fundamentals
+
+### 1. It’s possible (although typically not useful) to call an anonymous function. Which of the two approaches below is correct? Why?
+
+function(x) 3()
+
+(function(x) 3)()
+
+The second approach is correct.
+
+The anonymous function function(x) 3 is surrounded by a pair of parentheses before it is called by (). These extra parentheses separate the function call from the anonymous function’s body. Without them a function with the invalid body 3() is returned, which throws an error when we call it. This is easier to see if we name the function:
+
+```{r}
+f <- function(x) 3()
+f
+#> function(x) 3()
+f()
+#> Error in f(): attempt to apply non-function
+```
+
+### 2. A good rule of thumb is that an anonymous function should fit on one line and shouldn’t need to use {}. Review your code. Where could you have used an anonymous function instead of a named function? Where should you have used a named function instead of an anonymous function?
+
+The use of anonymous functions allows concise and elegant code in certain situations. However, they miss a descriptive name and when re-reading the code, it can take a while to figure out what they do. That’s why it’s helpful to give long and complex functions a descriptive name. It may be worthwhile to take a look at your own projects or other people’s code to reflect on this part of your coding style.
+
+### 3.
+
+#### a. What are the three important components of a function? How do we find them using code?
+
+These components are the function’s body(), formals() and environment().
+
+#### b. Are there any exceptions to these components?
+
+There is one exception to the rule that functions have three components. Primitive functions, like sum(), call C code directly with .Primitive() and contain no R code. Therefore, their formals(), body(), and environment() are all NULL.
+
+#### c. Find the components of sd().
+
+```{r}
+body(sd)
+formals(sd)
+environment(sd)
+```
+
+#### d. Find the components of length().
+
+```{r}
+body(length)
+formals(length)
+environment(length)
+```
+
+#### e. How can we determine whether a function is a primitive without relying on body(), formals(), and environment()? Hint: search the documentation for "primitive" or enter ?primitive in the console.
+
+The function is.primitive() will tell us if the function is primitive or not (boolean TRUE/FALSE returned).
+
+#### f. Demonstrate the primitive function test with sd() and length().
+
+```{r}
+is.primitive(sd)
+is.primitive(length)
+```
+
+
+## Lexical scoping
+
+### 1. What are the four principles that govern how R looks for values? Briefly describe each of them.
+
+R’s lexical scoping rules are based on these four principles:
+
+Name masking - Names defined inside a function override names written outside the function.
+Functions vs. variables - Functions are just objects, so R will ignore non-function objects when looking up the value. So it's best not to name functions and non-function objects the same thing.
+A fresh start - A new environment is created each time a function is called.
+Dynamic lookup - R looks for values when the function is run, not when it is created.
+
+### 2. What does the following code return? Why? Describe how each of the three c’s is interpreted.
+
+```{r}
+c <- 10
+c(c = c)
+```
+
+This code returns a named numeric vector of length one — with one element of the value 10 and the name "c". The first c represents the c() function, the second c is interpreted as a (quoted) name and the third c as a value.
+
+### 3. What does the following function return? Make a prediction before running the code yourself.
+
+```{r}
+f <- function(x) {
+  f <- function(x) {
+    f <- function() {
+      x ^ 2
+    }
+    f() + 1
+  }
+  f(x) * 2
+}
+f(10)
+```
+
+Within this nested function two more functions also named f are defined and called. Because the functions are each executed in their own environment R will look up and use the functions defined last in these environments. The innermost f() is called last, though it is the first function to return a value. Therefore, the order of the calculation passes “from the inside to the outside” and the function returns ((10 ^ 2) + 1) * 2, i.e. 202.
+
+## Writing functions
+
+### 1. Write both_na(), a function that takes two vectors of the same length and returns the number of positions that have an NA in both vectors. Also include an example usage of it.
+
+```{r}
+both_na <- function() {
+  
+}
+
+both_na()
+```
+
+```{r}
+both_na <- function(x, y) {
+  sum(is.na(x) & is.na(y))
+}
+both_na(
+  c(NA, NA, 1, 2),
+  c(NA, 1, NA, 2)
+)
+
+both_na(
+  c(NA, NA, 1, 2, NA, NA, 1),
+  c(NA, 1, NA, 2, NA, NA, 1)
+)
+
+```
+
+### 2. Write the logic for a greeting function that says “good morning”, “good afternoon”, or “good evening”, depending on the time of day. Make sure it provides correct results for the three cases included.
+
+```{r}
+greet <- function(time = lubridate::now()) {
+  hr <- lubridate::hour(time)
+  
+  # Write the function logic here
+}
+greet()
+
+greet(ymd_h("2024-01-08:05"))
+
+greet(ymd_h("2024-01-08:13"))
+
+greet(ymd_h("2024-01-08:20"))
+```
+
+```{r}
+greet <- function(time = lubridate::now()) {
+  hr <- lubridate::hour(time)
+
+  if (hr < 12) {
+    print("good morning")
+  } else if (hr < 17) {
+    print("good afternoon")
+  } else {
+    print("good evening")
+  }
+}
+greet()
+
+greet(ymd_h("2024-01-08:05"))
+
+greet(ymd_h("2024-01-08:13"))
+
+greet(ymd_h("2024-01-08:20"))
+
+```
+
+## In-lesson exercise
+
+Implement the fizzbuzz() function. It takes a single number as input. If the number is divisible by three, it returns “fizz”. If it’s divisible by five it returns “buzz”. If it’s divisible by three and five, it returns “fizzbuzz”. Otherwise, it returns the number. We will break the work down into steps, starting with divisibility checks.
+
+The modulo operator "%%" gives the remainder, for example 5 %% 3 -> 2 and 6 %% 3 -> 0. An output of 0 means that the number tested is divisible by the number on the right-hand side, so you will need to create a conditional to test for that.
+
+```{r}
+5 %% 3 # 2
+6 %% 3 # 0
+```
+
+### a. How would you test using the %% operator? You'll need to get a TRUE/FALSE result, with TRUE = divisible and FALSE = not divisible.
+
+```{r}
+(5 %% 3 == 0)
+(6 %% 3 == 0)
+```
+
+### b. Now that you have your divisibility test, write a single line of code to test for divisibility by 3, using numbers 1 to 10 (1:10).
+
+
+```{r}
+1:10 %% 3 == 0
+```
+
+### c. Write a line of code to test divisibility by 5.
+
+```{r}
+1:10 %% 5 == 0
+```
+
+### d. Figure out the four cases for divisibility by 3 and 5, and what text you would return for each.
+
+1. If x is divisible by 3 and 5, then return “fizzbuzz”.
+2. If x is divisible by 3 and not 5, then return “fizz”.
+3. If x is divisible by 5 and not 3, then return “buzz”.
+4. Otherwise, which is the case in which x is not divisible by either 3 or 5, return x.
+
+### e. Write out your logic for your 4 divisibility tests using if() {}, else if() {}, and else{} and returning a string ("buzz", "fizz", "fizzbuzz", or the number as a string). To test two conditions at once, combine them using && in between. We also need to make sure that the number we return is formatted as a character vector, so we will use as.character() in that case.
+
+```{r}
+if ((x %% 3 == 0) && (x %% 5 == 0)) {
+    "fizzbuzz"
+  } else if ((x %% 3 == 0)) {
+    "fizz"
+  } else if ((x %% 5 == 0)) {
+    "buzz"
+  } else {
+    # ensure that the function returns a character vector
+    as.character(x)
+  }
+```
+
+### f. Now we need to consider the input. What are the two conditions for valid input?
+
+1. The input must be a number.
+2. The input must be a single number.
+
+### g. Use stopifnot() and code for these conditions to write your input validation. stopifnot() will exit the function with an error.
+
+```{r}
+stopifnot(length(x) == 1)
+stopifnot(is.numeric(x))
+```
+
+### h. Now we are ready to combine our work and write the function! Include the function definition, input validation, and logic for what to return. Also include a few output examples showing each of the 4 cases and the 2 invalid input cases.
+
+```{r}
+fizzbuzz <- function(x) {
+  stopifnot(length(x) == 1)
+  stopifnot(is.numeric(x))
+  if ((x %% 3 == 0) && (x %% 5 == 0)) {
+    "fizzbuzz"
+  } else if ((x %% 3 == 0)) {
+    "fizz"
+  } else if ((x %% 5 == 0)) {
+    "buzz"
+  } else {
+    as.character(x)
+  }
+}
+
+fizzbuzz(6)
+fizzbuzz(10)
+fizzbuzz(15)
+fizzbuzz(2)
+
+fizzbuzz("wrong")
+fizzbuzz(c(3,5))
+```
+
+
+
+
 

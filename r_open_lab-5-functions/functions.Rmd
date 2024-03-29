@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # Writing functions in R
 
 ## Introduction
-Learning to write functions will really pay off as your data science becomes more complex. Functions let you automate your coding tasks and keep them organized, and help you write code that is easier to maintain (and that has fewer bugs and errors!).
+Learning to write functions will really pay off as your data science work becomes more complex. Functions let you automate your coding tasks and keep them organized, and help you write code that is easier to maintain (and that has fewer bugs and errors!).
 
 Here are some of the advantages of writing functions vs. copy/pasting code blocks:
 
@@ -32,6 +32,22 @@ A function is an object in R that contains reusable code. Functions can be broke
 1. Arguments (The variables you pass to the function)
 2. Body (The actual reusable code, that uses the arguments you supply)
 3. Environment (Where the function is in your R system, which determines how the function can be accessed and what resources it can use)
+
+### Finding the components
+
+To find the components of a function, you can use the following technique. We'll use lm() and sum() as examples. lm() runs linear models, and sum() adds numbers together.
+
+```{r}
+# lm() is a function in the stats package, written in R, so we can get the function definition, environment, and arguments.
+body(lm) # The code block
+formals(lm) # The arguments to the function
+environment(lm) # The environment in which the function resides, in this case "namespace:stats"
+
+# sum() is a primitive function, so it directly runs C code. Primitives do not have R function arguments, body, or environment, so they all return NULL.
+body(sum)
+formals(sum)
+environment(sum)
+```
 
 ### Functions are R objects
 
@@ -280,7 +296,7 @@ df |> mutate(
 )
 ```
 
-There's a subtle bug in this code, but it runs fine. If you take a look at the line starting with b = , you can see that we are taking the minimum of a rather than b. This is a copy/paste error, and it caused a difficult bug in our code!
+There's a subtle bug in this code, but it runs anyway. If you take a look at the line starting with b = , you can see that we are taking the minimum of a rather than b. This is a copy/paste error, and it caused a difficult bug in our code!
 
 #### Turning our code into a function
 
@@ -375,14 +391,85 @@ df |> mutate(
 
 This is going to make maintaining this code much easier in the long run!
 
-Next, we will spend the rest of the session working on exercises to practice creating functions. Please let me know if you have any questions, and open exercises.Rmd to get started!
+## Writing a fizzbuzz() function
+Let's work through writing a function together. We will break the problem up into small pieces and tackle them step by step, until we have a full function at the end.
+
+### Implementing fizzbuzz()
+
+Implement the fizzbuzz() function. It takes a single number as input. If the number is divisible by three, it returns “fizz”. If it’s divisible by five it returns “buzz”. If it’s divisible by three and five, it returns “fizzbuzz”. Otherwise, it returns the number. We will break the work down into steps, starting with divisibility checks.
+
+The modulo operator "%%" gives the remainder, for example 5 %% 3 -> 2 and 6 %% 3 -> 0. An output of 0 means that the number tested is divisible by the number on the right-hand side, so you will need to create a conditional to test for that.
+
+```{r}
+5 %% 3 # 2
+6 %% 3 # 0
+```
+
+#### a. How would you test using the %% operator? You'll need to get a TRUE/FALSE result, with TRUE = divisible and FALSE = not divisible.
+
+```{r}
 
 ```
 
-# Sources
+#### b. Now that you have your divisibility test, write a single line of code to test for divisibility by 3, using numbers 1 to 10 (1:10).
+
+
+```{r}
+
+```
+
+#### c. Write a line of code to test divisibility by 5.
+
+```{r}
+
+```
+
+#### d. Figure out the four cases for divisibility by 3 and 5, and what text you would return for each.
+
+
+#### e. Write out your logic for your 4 divisibility tests using if() {}, else if() {}, and else{} and returning a string ("buzz", "fizz", "fizzbuzz", or the number as a string). To test two conditions at once, combine them using && in between. We also need to make sure that the number we return is formatted as a character vector, so we will use as.character() in that case.
+
+```{r}
+
+```
+
+#### f. Now we need to consider the input. What are the two conditions for valid input?
+
+
+#### g. Use stopifnot() and code for these conditions to write your input validation. stopifnot() will exit the function with an error.
+
+```{r}
+stopifnot()
+stopifnot()
+```
+
+#### h. Now we are ready to combine our work and write the function! Include the function definition, input validation, and logic for what to return. Also include a few output examples showing each of the 4 cases and the 2 invalid input cases.
+
+```{r}
+fizzbuzz <- function(x) {
+
+}
+
+fizzbuzz(6)
+fizzbuzz(10)
+fizzbuzz(15)
+fizzbuzz(2)
+
+fizzbuzz("wrong")
+fizzbuzz(c(3,5))
+```
+
+Next, we will spend the rest of the session working on exercises to understand functions and practice creating them. Please let me know if you have any questions, and open exercises.Rmd to get started!
+
+## Sources
 * The Art of R Programming (ch 7): https://catalog.lib.ncsu.edu/catalog/NCSU4203672
 * R for Data Science (ch 25): https://r4ds.hadley.nz/functions
 * Advanced R (ch 6): https://adv-r.hadley.nz/functions.html
 * Introduction to the R Language (Functions): https://www.stat.berkeley.edu/~statcur/Workshop2/Presentations/functions.pdf
 
-### Eval: Please take a few minutes to fill out the workshop eval before you leave: https://go.ncsu.edu/dvs-eval
+## Eval: Please take a few minutes to fill out the workshop eval before you leave: https://go.ncsu.edu/dvs-eval
+
+## Get Data Help
+To get help from our grad student Data Science Consultants, visit https://go.ncsu.edu/getdatahelp!
+
+Consultants can help over email, chat, or booking a 30-minute consultation at Hill or Hunt Library or online.
